@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
 export type ToastLevel = "success" | "warning" | "info";
-export type ToastSource = "Clinic" | "Hospital" | "System";
+export type ToastSource = "Clinic" | "Hospital" | "System" | "Government" | "Patient" | "Provider";
 
 export type ToastItem = {
   id: number;

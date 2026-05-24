@@ -14,6 +14,7 @@ import { ClaimsProvider } from "@/context/ClaimsContext";
 import { ToastHost } from "@/components/ToastHost";
 import { ActivityProvider } from "@/context/ActivityContext";
 import { ActivityFeed } from "@/components/ActivityFeed";
+import { RoleProvider } from "@/context/RoleContext";
 
 function NotFoundComponent() {
   return (
@@ -118,18 +119,20 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <ClaimsProvider>
-        <ActivityProvider>
-          <div className="min-h-screen bg-slate-50 text-slate-900">
-            <TopBar />
-            <main className="mx-auto max-w-7xl px-6 py-8">
-              <Outlet />
-            </main>
-            <ToastHost />
-            <ActivityFeed />
-          </div>
-        </ActivityProvider>
-      </ClaimsProvider>
+      <RoleProvider>
+        <ClaimsProvider>
+          <ActivityProvider>
+            <div className="min-h-screen bg-slate-50 text-slate-900">
+              <TopBar />
+              <main className="mx-auto max-w-7xl px-6 py-8">
+                <Outlet />
+              </main>
+              <ToastHost />
+              <ActivityFeed />
+            </div>
+          </ActivityProvider>
+        </ClaimsProvider>
+      </RoleProvider>
     </QueryClientProvider>
   );
 }

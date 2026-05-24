@@ -13,7 +13,7 @@ export type SystemEventName =
   | "tpa.sync";
 
 export type SystemEventPayload = {
-  source?: "Clinic" | "Hospital" | "System" | "KAIZEN";
+  source?: "Clinic" | "Hospital" | "System" | "KAIZEN" | "Government" | "Patient" | "Provider";
   message?: string;
   refCode?: string;
   amount?: number;
