@@ -12,6 +12,8 @@ import appCss from "../styles.css?url";
 import { TopBar } from "@/components/TopBar";
 import { ClaimsProvider } from "@/context/ClaimsContext";
 import { ToastHost } from "@/components/ToastHost";
+import { ActivityProvider } from "@/context/ActivityContext";
+import { ActivityFeed } from "@/components/ActivityFeed";
 
 function NotFoundComponent() {
   return (
@@ -117,13 +119,16 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ClaimsProvider>
-        <div className="min-h-screen bg-slate-900 text-slate-100">
-          <TopBar />
-          <main className="mx-auto max-w-7xl px-6 py-8">
-            <Outlet />
-          </main>
-          <ToastHost />
-        </div>
+        <ActivityProvider>
+          <div className="min-h-screen bg-slate-900 text-slate-100">
+            <TopBar />
+            <main className="mx-auto max-w-7xl px-6 py-8">
+              <Outlet />
+            </main>
+            <ToastHost />
+            <ActivityFeed />
+          </div>
+        </ActivityProvider>
       </ClaimsProvider>
     </QueryClientProvider>
   );

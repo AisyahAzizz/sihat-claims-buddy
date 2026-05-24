@@ -86,3 +86,26 @@ html, body {
   to   { opacity: 1; transform: translateY(0); }
 }
 .fade-in-up { animation: fadeInUp 0.35s ease-out both; }
+
+/* Sci-fi card hover glow */
+.card-glow {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.card-glow:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.15), 0 8px 32px -8px rgba(56, 189, 248, 0.25);
+}
+
+/* Row flash for live updates */
+@keyframes rowFlash {
+  0% { background-color: rgba(56, 189, 248, 0.18); }
+  100% { background-color: transparent; }
+}
+.row-flash { animation: rowFlash 1.6s ease-out; }
+
+/* Soft pulse */
+@keyframes softPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.pulse-soft { animation: softPulse 2s ease-in-out infinite; }
