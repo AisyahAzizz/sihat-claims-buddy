@@ -11,7 +11,13 @@ import { useClaims } from "@/context/ClaimsContext";
 import { rahman, hospitalCase } from "@/data/mockData";
 import { eventBus } from "@/lib/eventBus";
 import { notifyOps, pushToInventory, updateBilling } from "@/lib/integrations";
+import { submitClaim, decideClaim } from "@/lib/claimsApi";
 import { AlertTriangle, ArrowRight, CheckCircle2, ArrowRightCircle, Loader2 } from "lucide-react";
+
+// Per-session unique ref so re-submits don't collide on the unique index
+function makeHospitalRef() {
+  return `GL-SSATU-${Date.now().toString().slice(-8)}-HOS`;
+}
 
 
 export const Route = createFileRoute("/hospital")({
