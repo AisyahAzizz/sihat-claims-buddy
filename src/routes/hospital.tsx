@@ -11,6 +11,7 @@ import { useClaims } from "@/context/ClaimsContext";
 import { rahman, hospitalCase } from "@/data/mockData";
 import { eventBus } from "@/lib/eventBus";
 import { notifyOps, pushToInventory, updateBilling } from "@/lib/integrations";
+import { submitClaim, decideClaim } from "@/lib/claimsApi";
 import { AlertTriangle, ArrowRight, CheckCircle2, ArrowRightCircle, Loader2 } from "lucide-react";
 
 
