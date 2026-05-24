@@ -190,7 +190,15 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
           Back
         </button>
         <button
-          onClick={onNext}
+          onClick={() => {
+            eventBus.emit("gl.requested", {
+              source: "Hospital",
+              level: "info",
+              message: "GL request submitted to AIA / HealthMetrics",
+              refCode: hospitalCase.glRef,
+            });
+            onNext();
+          }}
           className="inline-flex items-center gap-2 rounded-md bg-sky-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-sky-400"
         >
           Submit GL to AIA / HealthMetrics <ArrowRight className="h-4 w-4" />
