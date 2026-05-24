@@ -12,7 +12,7 @@ function Status() {
     (acc, c) => {
       acc.total += c.amount;
       if (c.status === "approved") acc.approved += c.amount;
-      if (c.status === "pending") acc.pending += c.amount;
+      if ((c.status as string) === "pending") acc.pending += c.amount;
       if (c.status === "rejected") acc.rejected += c.amount;
       return acc;
     },
