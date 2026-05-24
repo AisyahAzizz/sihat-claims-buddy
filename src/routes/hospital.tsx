@@ -354,8 +354,40 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
 }
 
 function Step4({ onNext }: { onNext: () => void }) {
+  const { demoMode } = useClaims();
   const [reviewDone, setReviewDone] = useState(false);
   const [issued, setIssued] = useState(false);
+  const autoRan = useRef(false);
+
+  // Auto-trigger realistic delay on mount
+  useEffect(() => {
+    if (autoRan.current) return;
+    autoRan.current = true;
+    const reviewDelay = demoMode ? 800 : 2000 + Math.random() * 2000;
+    const t1 = setTimeout(() => {
+      setReviewDone(true);
+      eventBus.emit("gl.ai.reviewing", {
+        source: "Hospital",
+        level: "info",
+        message: "Medical officer #A17 approved GL",
+        refCode: hospitalCase.glRef,
+      });
+    }, reviewDelay);
+    const t2 = setTimeout(() => {
+      setIssued(true);
+      eventBus.emit("gl.approved", {
+        source: "Hospital",
+        level: "success",
+        message: `GL approved · RM ${hospitalCase.glDetails.approvedAmount.toLocaleString()}`,
+        refCode: hospitalCase.glRef,
+        amount: hospitalCase.glDetails.approvedAmount,
+      });
+    }, reviewDelay + (demoMode ? 600 : 1500));
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [demoMode]);
 
   const events: TimelineEvent[] = [
     { status: "done", label: "GL drafted by KAIZEN", time: "14:31:02", note: "8 checks pre-answered" },
@@ -369,28 +401,18 @@ function Step4({ onNext }: { onNext: () => void }) {
       : { status: "pending", label: "GL decision" },
   ];
 
-  const handleSimulate = () => {
-    setReviewDone(true);
-    setTimeout(() => setIssued(true), 1500);
-  };
-
   return (
     <div className="space-y-6">
       <GLTimeline events={events} />
 
       {!issued ? (
-        <div className="rounded-lg border border-sky-500/40 bg-sky-500/10 p-5">
-          <div className="text-sm font-medium text-sky-200">Awaiting HealthMetrics response…</div>
+        <div className="card-glow rounded-lg border border-sky-500/40 bg-sky-500/10 p-5">
+          <div className="flex items-center gap-2 text-sm font-medium text-sky-200">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Awaiting HealthMetrics response…
+          </div>
           <div className="mt-1 text-xs text-sky-300/80">
             Traditional wait: 2–6 hours · KAIZEN target: under 8 minutes
-          </div>
-          <div className="mt-4 flex justify-center">
-            <button
-              onClick={handleSimulate}
-              className="rounded-md bg-sky-500 px-5 py-2 text-sm font-medium text-white hover:bg-sky-400"
-            >
-              Simulate GL approval (demo)
-            </button>
           </div>
         </div>
       ) : (
