@@ -19,22 +19,22 @@ export function TopBar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-700/70 bg-slate-900/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3">
         <Link to="/" className="group flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sky-500/15 ring-1 ring-sky-500/40">
-            <Activity className="h-4 w-4 text-sky-400" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sky-100 ring-1 ring-sky-300">
+            <Activity className="h-4 w-4 text-sky-600" />
           </div>
           <div className="leading-tight">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-100 group-hover:text-white">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 group-hover:text-white">
               SihatSatu
               {demoMode && (
-                <span className="rounded border border-amber-400/40 bg-amber-400/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-300">
+                <span className="rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-700">
                   Demo
                 </span>
               )}
             </div>
-            <div className="text-[11px] text-slate-400">Claims &amp; GL Agent</div>
+            <div className="text-[11px] text-slate-600">Claims &amp; GL Agent</div>
           </div>
         </Link>
 
@@ -47,7 +47,7 @@ export function TopBar() {
           />
           <LiveBadge label="KAIZEN Engine" tone="sky" state="Active" />
 
-          <label className="ml-2 flex cursor-pointer items-center gap-2 rounded-md border border-slate-700 bg-slate-800/60 px-2.5 py-1 text-[11px] text-slate-300 hover:bg-slate-800">
+          <label className="ml-2 flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-700 hover:bg-slate-100">
             <span>Demo</span>
             <input
               type="checkbox"
@@ -64,21 +64,21 @@ export function TopBar() {
 
 const TONE: Record<string, { border: string; bg: string; text: string; dot: string }> = {
   emerald: {
-    border: "border-emerald-500/30",
-    bg: "bg-emerald-500/10",
-    text: "text-emerald-300",
+    border: "border-emerald-200",
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
     dot: "bg-emerald-400",
   },
   amber: {
-    border: "border-amber-500/40",
-    bg: "bg-amber-500/10",
-    text: "text-amber-300",
+    border: "border-amber-300",
+    bg: "bg-amber-50",
+    text: "text-amber-700",
     dot: "bg-amber-400",
   },
   sky: {
-    border: "border-sky-500/30",
-    bg: "bg-sky-500/10",
-    text: "text-sky-300",
+    border: "border-sky-200",
+    bg: "bg-sky-50",
+    text: "text-sky-700",
     dot: "bg-sky-400",
   },
 };

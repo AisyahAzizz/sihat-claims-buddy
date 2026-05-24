@@ -4,10 +4,10 @@ export function StatusBadge({
   status: "approved" | "rejected" | "pending" | "warning";
 }) {
   const map = {
-    approved: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/40",
-    rejected: "bg-red-500/15 text-red-300 ring-red-500/40",
-    pending: "bg-slate-500/15 text-slate-300 ring-slate-500/40",
-    warning: "bg-amber-400/15 text-amber-300 ring-amber-400/40",
+    approved: "bg-emerald-100 text-emerald-700 ring-emerald-300",
+    rejected: "bg-red-100 text-red-700 ring-red-300",
+    pending: "bg-slate-500/15 text-slate-700 ring-slate-500/40",
+    warning: "bg-amber-100 text-amber-700 ring-amber-300",
   } as const;
   return (
     <span

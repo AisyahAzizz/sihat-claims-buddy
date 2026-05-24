@@ -4,23 +4,23 @@ import { CheckCircle2, AlertTriangle, Info } from "lucide-react";
 
 const LEVEL_STYLE: Record<ToastLevel, { border: string; icon: ReactNode }> = {
   success: {
-    border: "border-emerald-500/40",
-    icon: <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />,
+    border: "border-emerald-300",
+    icon: <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />,
   },
   warning: {
-    border: "border-amber-500/40",
-    icon: <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />,
+    border: "border-amber-300",
+    icon: <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />,
   },
   info: {
-    border: "border-sky-500/40",
-    icon: <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />,
+    border: "border-sky-300",
+    icon: <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" />,
   },
 };
 
 const SOURCE_COLOR: Record<ToastSource, string> = {
-  Clinic: "text-sky-300",
-  Hospital: "text-violet-300",
-  System: "text-slate-300",
+  Clinic: "text-sky-700",
+  Hospital: "text-violet-700",
+  System: "text-slate-700",
 };
 
 export function ToastHost() {
@@ -32,7 +32,7 @@ export function ToastHost() {
         return (
           <div
             key={t.id}
-            className={`fade-in-up flex items-start gap-2 rounded-lg border ${style.border} bg-slate-800/95 px-4 py-3 text-sm text-slate-100 shadow-xl shadow-black/40 backdrop-blur`}
+            className={`fade-in-up flex items-start gap-2 rounded-lg border ${style.border} bg-white/95 px-4 py-3 text-sm text-slate-900 shadow-xl shadow-slate-900/10 backdrop-blur`}
           >
             {style.icon}
             <div className="min-w-0 flex-1">

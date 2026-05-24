@@ -66,14 +66,14 @@ export function DocumentDropzone({
         <button
           type="button"
           onClick={() => setCameraOpen(true)}
-          className="inline-flex items-center gap-2 rounded-md border border-sky-500/50 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-200 hover:bg-sky-500/20"
+          className="inline-flex items-center gap-2 rounded-md border border-sky-300 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-800 hover:bg-sky-100"
         >
           <Camera className="h-4 w-4" /> Scan Document
         </button>
         <button
           type="button"
           onClick={() => uploadRef.current?.click()}
-          className="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
+          className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100"
         >
           <Upload className="h-4 w-4" /> Upload File
         </button>
@@ -91,7 +91,7 @@ export function DocumentDropzone({
       </div>
 
       {visible.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-700 bg-slate-900/40 px-4 py-6 text-center text-xs text-slate-500">
+        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-xs text-slate-500">
           No documents yet — scan with the camera or upload a file.
         </div>
       ) : (
@@ -99,29 +99,29 @@ export function DocumentDropzone({
           {visible.map((d, i) => (
             <div
               key={`${d.name}-${i}`}
-              className="flex items-center gap-3 rounded-lg border border-slate-700 bg-slate-900/40 p-3"
+              className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-slate-800 ring-1 ring-slate-700">
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-slate-100 ring-1 ring-slate-200">
                 {d.type === "Photo" ? (
-                  <ImageIcon className="h-5 w-5 text-sky-400" />
+                  <ImageIcon className="h-5 w-5 text-sky-600" />
                 ) : (
-                  <FileText className="h-5 w-5 text-sky-400" />
+                  <FileText className="h-5 w-5 text-sky-600" />
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="truncate font-mono text-xs text-slate-200">{d.name}</div>
+                <div className="truncate font-mono text-xs text-slate-800">{d.name}</div>
                 <div className="text-[11px] text-slate-500">
                   {d.type} · {d.size}
                 </div>
               </div>
-              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-300 ring-1 ring-emerald-500/40">
+              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-300">
                 Ready
               </span>
               {userTouched && (
                 <button
                   type="button"
                   onClick={() => remove(i)}
-                  className="rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-slate-200"
+                  className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
                   aria-label="Remove"
                 >
                   <X className="h-4 w-4" />
@@ -215,14 +215,14 @@ function CameraModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="w-full max-w-2xl overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-100">
-            <Camera className="h-4 w-4 text-sky-400" /> Scan Document
+      <div className="w-full max-w-2xl overflow-hidden rounded-xl border border-slate-200 bg-slate-900 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
+            <Camera className="h-4 w-4 text-sky-600" /> Scan Document
           </div>
           <button
             onClick={onClose}
-            className="rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+            className="rounded p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
@@ -230,7 +230,7 @@ function CameraModal({
         </div>
         <div className="relative bg-black">
           {error ? (
-            <div className="flex aspect-video items-center justify-center p-6 text-center text-sm text-red-300">
+            <div className="flex aspect-video items-center justify-center p-6 text-center text-sm text-red-700">
               {error}. Use Upload File instead.
             </div>
           ) : (
@@ -242,10 +242,10 @@ function CameraModal({
             />
           )}
         </div>
-        <div className="flex items-center justify-end gap-2 border-t border-slate-800 px-4 py-3">
+        <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
           <button
             onClick={onClose}
-            className="rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800"
+            className="rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
           >
             Cancel
           </button>

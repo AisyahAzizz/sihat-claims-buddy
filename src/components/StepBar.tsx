@@ -12,9 +12,9 @@ export function StepBar({ steps, current }: { steps: string[]; current: number }
             <div
               className={[
                 "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ring-1",
-                done && "bg-emerald-500/15 text-emerald-300 ring-emerald-500/40",
-                active && "bg-sky-500/15 text-sky-300 ring-sky-500/50",
-                !done && !active && "bg-slate-800 text-slate-500 ring-slate-700",
+                done && "bg-emerald-100 text-emerald-700 ring-emerald-300",
+                active && "bg-sky-100 text-sky-700 ring-sky-300",
+                !done && !active && "bg-slate-100 text-slate-500 ring-slate-200",
               ]
                 .filter(Boolean)
                 .join(" ")}
@@ -24,8 +24,8 @@ export function StepBar({ steps, current }: { steps: string[]; current: number }
             <span
               className={[
                 "text-xs font-medium whitespace-nowrap",
-                done && "text-emerald-300",
-                active && "text-sky-300",
+                done && "text-emerald-700",
+                active && "text-sky-700",
                 !done && !active && "text-slate-500",
               ]
                 .filter(Boolean)
@@ -37,7 +37,7 @@ export function StepBar({ steps, current }: { steps: string[]; current: number }
               <div
                 className={[
                   "h-px flex-1 mx-1",
-                  done ? "bg-emerald-500/40" : "bg-slate-700",
+                  done ? "bg-emerald-500/40" : "bg-slate-200",
                 ].join(" ")}
               />
             )}

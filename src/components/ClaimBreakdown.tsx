@@ -8,16 +8,16 @@ export function ClaimBreakdown({
   totalLabel?: string;
 }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-700 bg-slate-800/40">
+    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
       <table className="w-full text-sm">
-        <tbody className="divide-y divide-slate-700">
+        <tbody className="divide-y divide-slate-200">
           {items.map((it) => (
             <tr key={it.label}>
-              <td className="px-4 py-2.5 text-slate-200">{it.label}</td>
+              <td className="px-4 py-2.5 text-slate-800">{it.label}</td>
               <td
                 className={[
                   "px-4 py-2.5 text-right font-mono",
-                  it.amount < 0 ? "text-amber-300" : "text-slate-100",
+                  it.amount < 0 ? "text-amber-700" : "text-slate-900",
                 ].join(" ")}
               >
                 {fmt(it.amount)}
@@ -26,9 +26,9 @@ export function ClaimBreakdown({
           ))}
         </tbody>
         <tfoot>
-          <tr className="border-t border-slate-700 bg-emerald-500/5">
-            <td className="px-4 py-3 text-sm font-semibold text-emerald-300">{totalLabel}</td>
-            <td className="px-4 py-3 text-right font-mono text-lg font-semibold text-emerald-300">
+          <tr className="border-t border-slate-200 bg-emerald-500/5">
+            <td className="px-4 py-3 text-sm font-semibold text-emerald-700">{totalLabel}</td>
+            <td className="px-4 py-3 text-right font-mono text-lg font-semibold text-emerald-700">
               {fmt(total)}
             </td>
           </tr>
