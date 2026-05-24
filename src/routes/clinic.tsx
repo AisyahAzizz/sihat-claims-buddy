@@ -244,14 +244,17 @@ function Step4({ onReset }: { onReset: () => void }) {
     const t5 = setTimeout(() => setStage(4), 5200);
     const t6 = setTimeout(() => {
       setAdjudicatingDone(true);
+      const ref =
+        (window as unknown as { __lastClinicRef?: string }).__lastClinicRef ?? clinicClaim.json.claimRef;
+      autoApprove(ref).catch((e) => console.error("autoApprove failed", e));
       eventBus.emit("claim.auto.approved", {
         source: "Clinic",
         level: "success",
         message: "Clinic claim auto-approved · RM 99.00",
-        refCode: clinicClaim.json.claimRef,
+        refCode: ref,
         amount: clinicClaim.total,
       });
-      updateBilling({ ref: clinicClaim.json.claimRef, amount: clinicClaim.total });
+      updateBilling({ ref, amount: clinicClaim.total });
     }, 5200 + 3000);
     return () => [t1, t2, t3, t4, t5, t6].forEach(clearTimeout);
   }, []);
