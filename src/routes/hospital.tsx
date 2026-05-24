@@ -219,26 +219,47 @@ function Field({ label, value, mono }: { label: string; value: React.ReactNode; 
   );
 }
 
+const MICRO_STATUS = [
+  { label: "Queued in HealthMetrics TPA…", event: "tpa.sync" as const, source: "KAIZEN" as const },
+  { label: "Assigned to medical officer #A17", event: "gl.ai.reviewing" as const, source: "Hospital" as const },
+  { label: "Cross-checking policy coverage and medical necessity…", event: "gl.ai.reviewing" as const, source: "KAIZEN" as const },
+];
+
 function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
-  const { showToast } = useClaims();
+  const { showToast, demoMode } = useClaims();
   const [docs, setDocs] = useState<DocFile[] | null>(null);
   const [started, setStarted] = useState(false);
   const [scanned, setScanned] = useState(false);
+  const [microIdx, setMicroIdx] = useState(-1);
   const [showQA, setShowQA] = useState(false);
 
   const currentDocs = docs ?? (hospitalCase.documents as DocFile[]);
   const canStart = currentDocs.length > 0;
 
+  // Run micro-status sequence after scan completes
   useEffect(() => {
-    if (scanned) {
-      const t = setTimeout(() => setShowQA(true), 500);
-      return () => clearTimeout(t);
-    }
-  }, [scanned]);
+    if (!scanned) return;
+    let cancelled = false;
+    const run = async () => {
+      for (let i = 0; i < MICRO_STATUS.length; i++) {
+        if (cancelled) return;
+        setMicroIdx(i);
+        const s = MICRO_STATUS[i];
+        eventBus.emit(s.event, { source: s.source, level: "info", message: s.label });
+        const delay = demoMode ? 500 : 1500 + Math.random() * 1500;
+        await new Promise((r) => setTimeout(r, delay));
+      }
+      if (!cancelled) setShowQA(true);
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [scanned, demoMode]);
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-5">
+      <div className="card-glow rounded-lg border border-slate-700/70 bg-slate-800/60 p-5">
         <h3 className="mb-4 text-sm font-semibold text-slate-100">Supporting documents</h3>
         <DocumentDropzone
           seed={hospitalCase.documents as DocFile[]}
@@ -261,7 +282,7 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
       {started && !scanned && (
         <ScanProgress
           labels={hospitalCase.scanLabels}
-          intervalMs={320}
+          intervalMs={demoMode ? 160 : 320}
           onComplete={() => setScanned(true)}
         />
       )}
@@ -269,11 +290,29 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
       {scanned && (
         <>
           <CheckList items={hospitalCase.checks} />
-          <div className="rounded-lg border border-slate-700 bg-slate-800/40 px-4 py-3 text-sm text-slate-300">
+          <div className="rounded-lg border border-slate-700/70 bg-slate-800/40 px-4 py-3 text-sm text-slate-300">
             <span className="font-medium text-emerald-300">7 passed</span> ·{" "}
             <span className="font-medium text-amber-300">1 advisory</span> ·{" "}
             <span className="font-medium text-slate-100">GL likely to be approved</span>
           </div>
+
+          {microIdx >= 0 && !showQA && (
+            <div className="space-y-2">
+              {MICRO_STATUS.slice(0, microIdx + 1).map((s, i) => (
+                <div
+                  key={i}
+                  className="fade-in-up flex items-center gap-3 rounded-md border border-sky-500/30 bg-sky-500/5 px-3 py-2 text-sm text-sky-200"
+                >
+                  {i === microIdx ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-sky-400" />
+                  ) : (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                  )}
+                  <span>{s.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {showQA && (
             <div className="fade-in-up rounded-lg border border-amber-400/30 bg-amber-400/5 p-5">
