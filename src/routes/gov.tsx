@@ -72,11 +72,12 @@ function GovDashboard() {
     () =>
       rows.reduce(
         (a, c) => {
-          a.total += c.amount;
-          if (c.status === "approved") a.approved += c.amount;
-          if ((c.status as string) === "pending") a.pending += c.amount;
-          if (c.type.toLowerCase().includes("clinic") || c.type.toLowerCase().includes("outpatient")) a.clinic += c.amount;
-          else a.hospital += c.amount;
+          const amt = Number(c.amount);
+          a.total += amt;
+          if (c.status === "approved" || c.status === "auto_approved") a.approved += amt;
+          if (c.status === "pending") a.pending += amt;
+          if (c.claim_type === "clinic") a.clinic += amt;
+          else a.hospital += amt;
           return a;
         },
         { total: 0, approved: 0, pending: 0, clinic: 0, hospital: 0 },
@@ -84,21 +85,25 @@ function GovDashboard() {
     [rows],
   );
 
-  const handleAction = (ref: string, action: "approve" | "reject" | "flag") => {
+  const handleAction = async (ref: string, action: "approve" | "reject" | "flag") => {
+    const decision = action === "approve" ? "approved" : action === "reject" ? "rejected" : "flagged";
+    try {
+      await decideClaim(ref, decision, "MOH Reviewer");
+    } catch (e) {
+      console.error("decideClaim failed", e);
+    }
+    const row = rows.find((r) => r.ref_code === ref);
     if (action === "approve") {
-      setRows((prev) => prev.map((r) => (r.ref === ref ? { ...r, status: "approved" as never, _flashKey: Date.now() } : r)));
-      const row = rows.find((r) => r.ref === ref);
       eventBus.emit("gl.approved", {
         source: "Government",
         level: "success",
         message: `Approved by MOH reviewer · ${ref}`,
         refCode: ref,
-        amount: row?.amount,
+        amount: row ? Number(row.amount) : undefined,
       });
-      if (row) updateBilling({ ref, amount: row.amount });
+      if (row) updateBilling({ ref, amount: Number(row.amount) });
       showToast(`Approved ${ref}`, { level: "success", source: "Government" });
     } else if (action === "reject") {
-      setRows((prev) => prev.map((r) => (r.ref === ref ? { ...r, status: "rejected" as never, _flashKey: Date.now() } : r)));
       eventBus.emit("claim.rejected", {
         source: "Government",
         level: "warning",
@@ -107,7 +112,6 @@ function GovDashboard() {
       });
       showToast(`Rejected ${ref}`, { level: "warning", source: "Government" });
     } else {
-      setRows((prev) => prev.map((r) => (r.ref === ref ? { ...r, flagged: true, _flashKey: Date.now() } : r)));
       showToast(`Flagged ${ref} for review`, { level: "info", source: "Government" });
     }
   };
