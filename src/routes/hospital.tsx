@@ -27,6 +27,9 @@ export const Route = createFileRoute("/hospital")({
 
 const STEPS = ["Admission", "GL Request", "AI Review", "GL Status", "Ward & Claim"];
 
+// Holds the ref_code for the current hospital session so Step4 can approve the row Step2 created
+let currentHospitalRef: string | null = null;
+
 function HospitalWizard() {
   const { hospitalStep, setHospitalStep } = useClaims();
   return (
