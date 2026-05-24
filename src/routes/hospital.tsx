@@ -491,7 +491,22 @@ function Step5({ onReset }: { onReset: () => void }) {
 
       <div className="flex flex-wrap items-center justify-end gap-3">
         <button
-          onClick={() => showToast("Claim queued for discharge. Will auto-submit to AIA.")}
+          onClick={() => {
+            notifyOps({ ward: "4B", patient: rahman.name });
+            pushToInventory({ ref: hospitalCase.glRef });
+            updateBilling({ ref: hospitalCase.glRef, amount: hospitalCase.claimTotal });
+            eventBus.emit("discharge.queued", {
+              source: "Hospital",
+              level: "success",
+              message: "Discharge claim queued · auto-submitting to AIA",
+              refCode: hospitalCase.glRef,
+              amount: hospitalCase.claimTotal,
+            });
+            showToast("Discharge claim queued · auto-submitting to AIA", {
+              level: "success",
+              source: "Hospital",
+            });
+          }}
           className="rounded-md bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-400"
         >
           Auto-file Discharge Claim
