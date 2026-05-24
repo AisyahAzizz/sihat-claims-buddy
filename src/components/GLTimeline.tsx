@@ -12,7 +12,7 @@ export function GLTimeline({ events }: { events: TimelineEvent[] }) {
     <ol className="relative space-y-4 border-l border-slate-200 pl-6">
       {events.map((e, i) => (
         <li key={i} className="fade-in-up" style={{ animationDelay: `${i * 60}ms` }}>
-          <span className="absolute -left-[9px] mt-1 flex h-4 w-4 items-center justify-center rounded-full bg-slate-900">
+          <span className="absolute -left-[9px] mt-1 flex h-4 w-4 items-center justify-center rounded-full bg-slate-50">
             {e.status === "done" && (
               <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/20 ring-1 ring-emerald-400">
                 <Check className="h-2.5 w-2.5 text-emerald-700" />
