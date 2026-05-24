@@ -244,7 +244,7 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
           disabled={!canStart}
           className="inline-flex items-center gap-2 rounded-md bg-sky-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Start AI Review
+          Check Documents
         </button>
       )}
 
