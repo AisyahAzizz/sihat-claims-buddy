@@ -68,17 +68,38 @@ function Step1({ onNext }: { onNext: () => void }) {
 }
 
 function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
-  const { showToast } = useClaims();
+  const { showToast, demoMode } = useClaims();
   const [docs, setDocs] = useState<DocFile[] | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [validating, setValidating] = useState(false);
   const [done, setDone] = useState(false);
 
   const currentDocs = docs ?? (clinicClaim.documents as DocFile[]);
   const canScan = currentDocs.length > 0;
 
+  // Auto-advance in demo mode
+  useEffect(() => {
+    if (done && demoMode) {
+      const t = setTimeout(onNext, 600);
+      return () => clearTimeout(t);
+    }
+  }, [done, demoMode, onNext]);
+
+  const handleScanComplete = () => {
+    setValidating(true);
+    eventBus.emit("tpa.sync", {
+      source: "KAIZEN",
+      message: "Insurer validation in progress…",
+    });
+    setTimeout(() => {
+      setValidating(false);
+      setDone(true);
+    }, demoMode ? 600 : 1200);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-5">
+      <div className="card-glow rounded-lg border border-slate-700/70 bg-slate-800/60 p-5">
         <h3 className="mb-4 text-sm font-semibold text-slate-100">Uploaded documents</h3>
         <DocumentDropzone
           seed={clinicClaim.documents as DocFile[]}
@@ -98,19 +119,25 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
         </button>
       )}
 
-
-      {scanning && !done && (
+      {scanning && !done && !validating && (
         <ScanProgress
           labels={clinicClaim.scanLabels}
-          intervalMs={280}
-          onComplete={() => setDone(true)}
+          intervalMs={demoMode ? 140 : 280}
+          onComplete={handleScanComplete}
         />
+      )}
+
+      {validating && (
+        <div className="fade-in-up flex items-center gap-3 rounded-lg border border-sky-500/40 bg-sky-500/10 px-4 py-3 text-sm text-sky-200">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Insurer validation in progress · syncing with HealthMetrics TPA…
+        </div>
       )}
 
       {done && (
         <>
           <CheckList items={clinicClaim.checks} />
-          <div className="flex items-center justify-between rounded-lg border border-slate-700 bg-slate-800/40 px-4 py-3 text-sm">
+          <div className="flex items-center justify-between rounded-lg border border-slate-700/70 bg-slate-800/40 px-4 py-3 text-sm">
             <span className="text-slate-300">
               <span className="font-medium text-emerald-300">6 passed</span> ·{" "}
               <span className="font-medium text-amber-300">1 warning</span> ·{" "}
@@ -160,6 +187,15 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
           disabled={loading}
           onClick={() => {
             setLoading(true);
+            eventBus.emit("claim.submitted", {
+              source: "Clinic",
+              level: "info",
+              message: "Clinic claim submitted to AIA",
+              refCode: clinicClaim.json.claimRef,
+              amount: clinicClaim.total,
+              patient: "Encik Rahman",
+              provider: "Klinik Sihat",
+            });
             setTimeout(onNext, 1500);
           }}
           className="inline-flex items-center gap-2 rounded-md bg-sky-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-sky-400 disabled:opacity-70"
