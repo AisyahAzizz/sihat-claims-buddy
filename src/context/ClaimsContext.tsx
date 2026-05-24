@@ -1,12 +1,24 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
+export type ToastLevel = "success" | "warning" | "info";
+export type ToastSource = "Clinic" | "Hospital" | "System";
+
+export type ToastItem = {
+  id: number;
+  message: string;
+  level: ToastLevel;
+  source: ToastSource;
+};
+
 type ClaimsState = {
   clinicStep: number;
   setClinicStep: (n: number) => void;
   hospitalStep: number;
   setHospitalStep: (n: number) => void;
-  toasts: { id: number; message: string }[];
-  showToast: (message: string) => void;
+  toasts: ToastItem[];
+  showToast: (message: string, opts?: { level?: ToastLevel; source?: ToastSource }) => void;
+  demoMode: boolean;
+  setDemoMode: (v: boolean) => void;
 };
 
 const ClaimsContext = createContext<ClaimsState | null>(null);
@@ -14,19 +26,33 @@ const ClaimsContext = createContext<ClaimsState | null>(null);
 export function ClaimsProvider({ children }: { children: ReactNode }) {
   const [clinicStep, setClinicStep] = useState(1);
   const [hospitalStep, setHospitalStep] = useState(1);
-  const [toasts, setToasts] = useState<{ id: number; message: string }[]>([]);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [demoMode, setDemoMode] = useState(false);
 
-  const showToast = (message: string) => {
+  const showToast: ClaimsState["showToast"] = (message, opts) => {
     const id = Date.now() + Math.random();
-    setToasts((t) => [...t, { id, message }]);
-    setTimeout(() => {
-      setToasts((t) => t.filter((x) => x.id !== id));
-    }, 3500);
+    const t: ToastItem = {
+      id,
+      message,
+      level: opts?.level ?? "info",
+      source: opts?.source ?? "System",
+    };
+    setToasts((prev) => [...prev, t]);
+    setTimeout(() => setToasts((prev) => prev.filter((x) => x.id !== id)), 3500);
   };
 
   return (
     <ClaimsContext.Provider
-      value={{ clinicStep, setClinicStep, hospitalStep, setHospitalStep, toasts, showToast }}
+      value={{
+        clinicStep,
+        setClinicStep,
+        hospitalStep,
+        setHospitalStep,
+        toasts,
+        showToast,
+        demoMode,
+        setDemoMode,
+      }}
     >
       {children}
     </ClaimsContext.Provider>

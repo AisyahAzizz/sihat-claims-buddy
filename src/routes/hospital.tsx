@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StepBar } from "@/components/StepBar";
 import { PatientCard } from "@/components/PatientCard";
 import { ScanProgress } from "@/components/ScanProgress";
@@ -9,7 +9,9 @@ import { GLTimeline, TimelineEvent } from "@/components/GLTimeline";
 import { DocumentDropzone, type DocFile } from "@/components/DocumentDropzone";
 import { useClaims } from "@/context/ClaimsContext";
 import { rahman, hospitalCase } from "@/data/mockData";
-import { AlertTriangle, ArrowRight, CheckCircle2, ArrowRightCircle } from "lucide-react";
+import { eventBus } from "@/lib/eventBus";
+import { notifyOps, pushToInventory, updateBilling } from "@/lib/integrations";
+import { AlertTriangle, ArrowRight, CheckCircle2, ArrowRightCircle, Loader2 } from "lucide-react";
 
 
 export const Route = createFileRoute("/hospital")({
@@ -188,7 +190,15 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
           Back
         </button>
         <button
-          onClick={onNext}
+          onClick={() => {
+            eventBus.emit("gl.requested", {
+              source: "Hospital",
+              level: "info",
+              message: "GL request submitted to AIA / HealthMetrics",
+              refCode: hospitalCase.glRef,
+            });
+            onNext();
+          }}
           className="inline-flex items-center gap-2 rounded-md bg-sky-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-sky-400"
         >
           Submit GL to AIA / HealthMetrics <ArrowRight className="h-4 w-4" />
@@ -209,26 +219,47 @@ function Field({ label, value, mono }: { label: string; value: React.ReactNode; 
   );
 }
 
+const MICRO_STATUS = [
+  { label: "Queued in HealthMetrics TPA…", event: "tpa.sync" as const, source: "KAIZEN" as const },
+  { label: "Assigned to medical officer #A17", event: "gl.ai.reviewing" as const, source: "Hospital" as const },
+  { label: "Cross-checking policy coverage and medical necessity…", event: "gl.ai.reviewing" as const, source: "KAIZEN" as const },
+];
+
 function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
-  const { showToast } = useClaims();
+  const { showToast, demoMode } = useClaims();
   const [docs, setDocs] = useState<DocFile[] | null>(null);
   const [started, setStarted] = useState(false);
   const [scanned, setScanned] = useState(false);
+  const [microIdx, setMicroIdx] = useState(-1);
   const [showQA, setShowQA] = useState(false);
 
   const currentDocs = docs ?? (hospitalCase.documents as DocFile[]);
   const canStart = currentDocs.length > 0;
 
+  // Run micro-status sequence after scan completes
   useEffect(() => {
-    if (scanned) {
-      const t = setTimeout(() => setShowQA(true), 500);
-      return () => clearTimeout(t);
-    }
-  }, [scanned]);
+    if (!scanned) return;
+    let cancelled = false;
+    const run = async () => {
+      for (let i = 0; i < MICRO_STATUS.length; i++) {
+        if (cancelled) return;
+        setMicroIdx(i);
+        const s = MICRO_STATUS[i];
+        eventBus.emit(s.event, { source: s.source, level: "info", message: s.label });
+        const delay = demoMode ? 500 : 1500 + Math.random() * 1500;
+        await new Promise((r) => setTimeout(r, delay));
+      }
+      if (!cancelled) setShowQA(true);
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [scanned, demoMode]);
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-5">
+      <div className="card-glow rounded-lg border border-slate-700/70 bg-slate-800/60 p-5">
         <h3 className="mb-4 text-sm font-semibold text-slate-100">Supporting documents</h3>
         <DocumentDropzone
           seed={hospitalCase.documents as DocFile[]}
@@ -251,7 +282,7 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
       {started && !scanned && (
         <ScanProgress
           labels={hospitalCase.scanLabels}
-          intervalMs={320}
+          intervalMs={demoMode ? 160 : 320}
           onComplete={() => setScanned(true)}
         />
       )}
@@ -259,11 +290,29 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
       {scanned && (
         <>
           <CheckList items={hospitalCase.checks} />
-          <div className="rounded-lg border border-slate-700 bg-slate-800/40 px-4 py-3 text-sm text-slate-300">
+          <div className="rounded-lg border border-slate-700/70 bg-slate-800/40 px-4 py-3 text-sm text-slate-300">
             <span className="font-medium text-emerald-300">7 passed</span> ·{" "}
             <span className="font-medium text-amber-300">1 advisory</span> ·{" "}
             <span className="font-medium text-slate-100">GL likely to be approved</span>
           </div>
+
+          {microIdx >= 0 && !showQA && (
+            <div className="space-y-2">
+              {MICRO_STATUS.slice(0, microIdx + 1).map((s, i) => (
+                <div
+                  key={i}
+                  className="fade-in-up flex items-center gap-3 rounded-md border border-sky-500/30 bg-sky-500/5 px-3 py-2 text-sm text-sky-200"
+                >
+                  {i === microIdx ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-sky-400" />
+                  ) : (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                  )}
+                  <span>{s.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {showQA && (
             <div className="fade-in-up rounded-lg border border-amber-400/30 bg-amber-400/5 p-5">
@@ -305,8 +354,40 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
 }
 
 function Step4({ onNext }: { onNext: () => void }) {
+  const { demoMode } = useClaims();
   const [reviewDone, setReviewDone] = useState(false);
   const [issued, setIssued] = useState(false);
+  const autoRan = useRef(false);
+
+  // Auto-trigger realistic delay on mount
+  useEffect(() => {
+    if (autoRan.current) return;
+    autoRan.current = true;
+    const reviewDelay = demoMode ? 800 : 2000 + Math.random() * 2000;
+    const t1 = setTimeout(() => {
+      setReviewDone(true);
+      eventBus.emit("gl.ai.reviewing", {
+        source: "Hospital",
+        level: "info",
+        message: "Medical officer #A17 approved GL",
+        refCode: hospitalCase.glRef,
+      });
+    }, reviewDelay);
+    const t2 = setTimeout(() => {
+      setIssued(true);
+      eventBus.emit("gl.approved", {
+        source: "Hospital",
+        level: "success",
+        message: `GL approved · RM ${hospitalCase.glDetails.approvedAmount.toLocaleString()}`,
+        refCode: hospitalCase.glRef,
+        amount: hospitalCase.glDetails.approvedAmount,
+      });
+    }, reviewDelay + (demoMode ? 600 : 1500));
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [demoMode]);
 
   const events: TimelineEvent[] = [
     { status: "done", label: "GL drafted by KAIZEN", time: "14:31:02", note: "8 checks pre-answered" },
@@ -320,28 +401,18 @@ function Step4({ onNext }: { onNext: () => void }) {
       : { status: "pending", label: "GL decision" },
   ];
 
-  const handleSimulate = () => {
-    setReviewDone(true);
-    setTimeout(() => setIssued(true), 1500);
-  };
-
   return (
     <div className="space-y-6">
       <GLTimeline events={events} />
 
       {!issued ? (
-        <div className="rounded-lg border border-sky-500/40 bg-sky-500/10 p-5">
-          <div className="text-sm font-medium text-sky-200">Awaiting HealthMetrics response…</div>
+        <div className="card-glow rounded-lg border border-sky-500/40 bg-sky-500/10 p-5">
+          <div className="flex items-center gap-2 text-sm font-medium text-sky-200">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Awaiting HealthMetrics response…
+          </div>
           <div className="mt-1 text-xs text-sky-300/80">
             Traditional wait: 2–6 hours · KAIZEN target: under 8 minutes
-          </div>
-          <div className="mt-4 flex justify-center">
-            <button
-              onClick={handleSimulate}
-              className="rounded-md bg-sky-500 px-5 py-2 text-sm font-medium text-white hover:bg-sky-400"
-            >
-              Simulate GL approval (demo)
-            </button>
           </div>
         </div>
       ) : (
@@ -420,7 +491,22 @@ function Step5({ onReset }: { onReset: () => void }) {
 
       <div className="flex flex-wrap items-center justify-end gap-3">
         <button
-          onClick={() => showToast("Claim queued for discharge. Will auto-submit to AIA.")}
+          onClick={() => {
+            notifyOps({ ward: "4B", patient: rahman.name });
+            pushToInventory({ ref: hospitalCase.glRef });
+            updateBilling({ ref: hospitalCase.glRef, amount: hospitalCase.claimTotal });
+            eventBus.emit("discharge.queued", {
+              source: "Hospital",
+              level: "success",
+              message: "Discharge claim queued · auto-submitting to AIA",
+              refCode: hospitalCase.glRef,
+              amount: hospitalCase.claimTotal,
+            });
+            showToast("Discharge claim queued · auto-submitting to AIA", {
+              level: "success",
+              source: "Hospital",
+            });
+          }}
           className="rounded-md bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-400"
         >
           Auto-file Discharge Claim

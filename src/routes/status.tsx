@@ -1,29 +1,111 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { dashboardClaims } from "@/data/mockData";
+import { eventBus, SystemEventPayload } from "@/lib/eventBus";
 
 export const Route = createFileRoute("/status")({
   component: Status,
   head: () => ({ meta: [{ title: "Claims Dashboard — SihatSatu" }] }),
 });
 
+type Row = (typeof dashboardClaims)[number] & { _flashKey?: number };
+
 function Status() {
-  const totals = dashboardClaims.reduce(
-    (acc, c) => {
-      acc.total += c.amount;
-      if (c.status === "approved") acc.approved += c.amount;
-      if ((c.status as string) === "pending") acc.pending += c.amount;
-      if (c.status === "rejected") acc.rejected += c.amount;
-      return acc;
-    },
-    { total: 0, approved: 0, pending: 0, rejected: 0 },
+  const [rows, setRows] = useState<Row[]>(() => [...dashboardClaims]);
+  const [lastEventAt, setLastEventAt] = useState<number>(0);
+
+  useEffect(() => {
+    const upsert = (ref: string, patch: Partial<Row>, fallback?: Row) => {
+      setLastEventAt(Date.now());
+      setRows((prev) => {
+        const i = prev.findIndex((r) => r.ref === ref);
+        if (i === -1 && fallback) {
+          return [{ ...fallback, ...patch, _flashKey: Date.now() }, ...prev];
+        }
+        if (i === -1) return prev;
+        const next = [...prev];
+        next[i] = { ...next[i], ...patch, _flashKey: Date.now() };
+        return next;
+      });
+    };
+
+    const offs = [
+      eventBus.subscribe("claim.submitted", (p: SystemEventPayload) => {
+        const ref = (p.refCode as string) || `SSATU-${Date.now()}`;
+        upsert(
+          ref,
+          { status: "pending" as never },
+          {
+            ref,
+            patient: (p.patient as string) || "Encik Rahman",
+            type: "Outpatient",
+            provider: (p.provider as string) || "Klinik Sihat",
+            amount: (p.amount as number) || 99,
+            insurer: "AIA",
+            status: "pending" as never,
+            submitted: new Date().toLocaleString("en-MY", {
+              day: "2-digit",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          },
+        );
+      }),
+      eventBus.subscribe("claim.auto.approved", (p: SystemEventPayload) => {
+        const ref = (p.refCode as string) || "SSATU-20260524-001";
+        upsert(ref, { status: "approved" as never });
+      }),
+      eventBus.subscribe("gl.approved", (p: SystemEventPayload) => {
+        const ref = (p.refCode as string) || "GL-SSATU-20260524-HOS";
+        upsert(ref, { status: "approved" as never });
+      }),
+      eventBus.subscribe("claim.rejected", (p: SystemEventPayload) => {
+        const ref = p.refCode as string;
+        if (ref) upsert(ref, { status: "rejected" as never });
+      }),
+    ];
+    return () => offs.forEach((o) => o?.());
+  }, []);
+
+  const totals = useMemo(
+    () =>
+      rows.reduce(
+        (acc, c) => {
+          acc.total += c.amount;
+          if (c.status === "approved") acc.approved += c.amount;
+          if ((c.status as string) === "pending") acc.pending += c.amount;
+          if (c.status === "rejected") acc.rejected += c.amount;
+          return acc;
+        },
+        { total: 0, approved: 0, pending: 0, rejected: 0 },
+      ),
+    [rows],
   );
+
+  const isLive = Date.now() - lastEventAt < 3000;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-slate-100">Claims Dashboard</h1>
-        <p className="text-sm text-slate-400">All claims processed by the SihatSatu Claims Agent.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-slate-100">Claims Dashboard</h1>
+          <p className="text-sm text-slate-400">All claims processed by the SihatSatu Claims Agent.</p>
+        </div>
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-medium ${
+            isLive
+              ? "border-sky-500/40 bg-sky-500/10 text-sky-300"
+              : "border-slate-700 bg-slate-800/40 text-slate-400"
+          }`}
+        >
+          <span className="relative flex h-1.5 w-1.5">
+            <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${isLive ? "bg-sky-400" : "bg-slate-500"} opacity-75`} />
+            <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${isLive ? "bg-sky-400" : "bg-slate-500"}`} />
+          </span>
+          {isLive ? "Live update" : "Listening"}
+        </span>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -33,7 +115,7 @@ function Status() {
         <Stat label="Rejected" value={totals.rejected} tone="red" />
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-slate-700 bg-slate-800/40">
+      <div className="card-glow overflow-hidden rounded-lg border border-slate-700/70 bg-slate-800/40">
         <table className="w-full text-sm">
           <thead className="bg-slate-900/60 text-left text-[11px] uppercase tracking-wide text-slate-400">
             <tr>
@@ -49,8 +131,11 @@ function Status() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-700">
-            {dashboardClaims.map((c) => (
-              <tr key={c.ref} className="hover:bg-slate-800/40">
+            {rows.map((c) => (
+              <tr
+                key={c.ref}
+                className={`hover:bg-slate-800/40 ${c._flashKey ? "row-flash" : ""}`}
+              >
                 <Td>
                   <span className="font-mono text-sky-300">{c.ref}</span>
                 </Td>
@@ -59,7 +144,9 @@ function Status() {
                 <Td className="text-slate-400">{c.provider}</Td>
                 <Td className="text-right font-mono">RM {c.amount.toLocaleString()}</Td>
                 <Td className="text-slate-400">{c.insurer}</Td>
-                <Td><StatusBadge status={c.status} /></Td>
+                <Td>
+                  <StatusBadge status={c.status} />
+                </Td>
                 <Td className="font-mono text-xs text-slate-400">{c.submitted}</Td>
                 <Td>
                   {c.status === "rejected" ? (
@@ -96,7 +183,7 @@ function Stat({ label, value, tone }: { label: string; value: number; tone: "sla
     red: "text-red-300",
   };
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-800/40 p-4">
+    <div className="card-glow rounded-lg border border-slate-700/70 bg-slate-800/40 p-4">
       <div className="text-[11px] uppercase tracking-wide text-slate-500">{label}</div>
       <div className={`mt-2 font-mono text-2xl font-semibold ${toneMap[tone]}`}>
         RM {value.toLocaleString()}
