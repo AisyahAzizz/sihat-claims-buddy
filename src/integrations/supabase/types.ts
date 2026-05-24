@@ -14,7 +14,98 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      claim_events: {
+        Row: {
+          claim_id: string | null
+          created_at: string
+          event_name: string
+          id: string
+          level: string
+          message: string | null
+          payload: Json | null
+          source: string
+        }
+        Insert: {
+          claim_id?: string | null
+          created_at?: string
+          event_name: string
+          id?: string
+          level?: string
+          message?: string | null
+          payload?: Json | null
+          source: string
+        }
+        Update: {
+          claim_id?: string | null
+          created_at?: string
+          event_name?: string
+          id?: string
+          level?: string
+          message?: string | null
+          payload?: Json | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claims: {
+        Row: {
+          amount: number
+          claim_type: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          diagnosis: string | null
+          id: string
+          notes: string | null
+          patient_ic: string | null
+          patient_name: string
+          provider_name: string
+          ref_code: string
+          status: Database["public"]["Enums"]["claim_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          claim_type: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          diagnosis?: string | null
+          id?: string
+          notes?: string | null
+          patient_ic?: string | null
+          patient_name: string
+          provider_name: string
+          ref_code: string
+          status?: Database["public"]["Enums"]["claim_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          claim_type?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          diagnosis?: string | null
+          id?: string
+          notes?: string | null
+          patient_ic?: string | null
+          patient_name?: string
+          provider_name?: string
+          ref_code?: string
+          status?: Database["public"]["Enums"]["claim_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +114,12 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      claim_status:
+        | "pending"
+        | "auto_approved"
+        | "approved"
+        | "rejected"
+        | "flagged"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +246,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      claim_status: [
+        "pending",
+        "auto_approved",
+        "approved",
+        "rejected",
+        "flagged",
+      ],
+    },
   },
 } as const
