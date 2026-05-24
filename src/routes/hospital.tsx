@@ -391,11 +391,16 @@ function Step4({ onNext }: { onNext: () => void }) {
     }, reviewDelay);
     const t2 = setTimeout(() => {
       setIssued(true);
+      const ref =
+        (window as unknown as { __lastHospitalRef?: string }).__lastHospitalRef ?? hospitalCase.glRef;
+      decideClaim(ref, "approved", "HealthMetrics TPA").catch((e) =>
+        console.error("decideClaim (GL) failed", e),
+      );
       eventBus.emit("gl.approved", {
         source: "Hospital",
         level: "success",
         message: `GL approved · RM ${hospitalCase.glDetails.approvedAmount.toLocaleString()}`,
-        refCode: hospitalCase.glRef,
+        refCode: ref,
         amount: hospitalCase.glDetails.approvedAmount,
       });
     }, reviewDelay + (demoMode ? 600 : 1500));
