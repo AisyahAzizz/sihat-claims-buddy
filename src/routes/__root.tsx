@@ -65,6 +65,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "SihatSatu Claims & GL Agent — Malaysian healthcare insurance claims and guarantee letters, automated.",
       },
+      { property: "og:title", content: "SihatSatu — Claims & GL Agent" },
+      { name: "twitter:title", content: "SihatSatu — Claims & GL Agent" },
+      { name: "description", content: "Healtcare operations include everything that doctor and patients need" },
+      { property: "og:description", content: "Healtcare operations include everything that doctor and patients need" },
+      { name: "twitter:description", content: "Healtcare operations include everything that doctor and patients need" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/78f2ceb6-c3f8-4aaf-8e85-842859290172" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/78f2ceb6-c3f8-4aaf-8e85-842859290172" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:type", content: "website" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
