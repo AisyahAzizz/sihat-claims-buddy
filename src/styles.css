@@ -34,45 +34,45 @@
 
 :root {
   --radius: 0.5rem;
-  /* Dark only — slate-900 base */
-  --background: oklch(0.208 0.04 256);
-  --foreground: oklch(0.97 0.01 256);
-  --card: oklch(0.264 0.035 256);
-  --card-foreground: oklch(0.97 0.01 256);
-  --popover: oklch(0.264 0.035 256);
-  --popover-foreground: oklch(0.97 0.01 256);
+  /* Light theme — slate-50 base */
+  --background: oklch(0.985 0.005 256);
+  --foreground: oklch(0.21 0.04 256);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.04 256);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.04 256);
   --primary: oklch(0.685 0.165 237);
   --primary-foreground: oklch(0.99 0.005 256);
-  --secondary: oklch(0.32 0.03 256);
-  --secondary-foreground: oklch(0.97 0.01 256);
-  --muted: oklch(0.32 0.03 256);
-  --muted-foreground: oklch(0.7 0.025 256);
-  --accent: oklch(0.32 0.03 256);
-  --accent-foreground: oklch(0.97 0.01 256);
-  --destructive: oklch(0.65 0.22 22);
+  --secondary: oklch(0.96 0.01 256);
+  --secondary-foreground: oklch(0.21 0.04 256);
+  --muted: oklch(0.96 0.01 256);
+  --muted-foreground: oklch(0.5 0.025 256);
+  --accent: oklch(0.96 0.01 256);
+  --accent-foreground: oklch(0.21 0.04 256);
+  --destructive: oklch(0.6 0.22 22);
   --destructive-foreground: oklch(0.99 0.005 256);
-  --border: oklch(0.37 0.03 256);
-  --input: oklch(0.37 0.03 256);
+  --border: oklch(0.9 0.015 256);
+  --input: oklch(0.9 0.015 256);
   --ring: oklch(0.685 0.165 237);
 }
 
 html, body {
-  background-color: #0f172a; /* slate-900 */
-  color: #f1f5f9; /* slate-100 */
+  background-color: #f8fafc; /* slate-50 */
+  color: #0f172a; /* slate-900 */
   font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 @layer base {
   * {
-    border-color: #334155; /* slate-700 */
+    border-color: #e2e8f0; /* slate-200 */
   }
 }
 
 /* Typewriter caret */
 .tw-caret::after {
   content: "▍";
-  color: #38bdf8;
+  color: #0284c7; /* sky-600 */
   margin-left: 2px;
   animation: blink 1s steps(2, start) infinite;
 }
@@ -92,13 +92,13 @@ html, body {
   transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
 .card-glow:hover {
-  border-color: rgba(56, 189, 248, 0.35);
+  border-color: rgba(56, 189, 248, 0.45);
   box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.15), 0 8px 32px -8px rgba(56, 189, 248, 0.25);
 }
 
 /* Row flash for live updates */
 @keyframes rowFlash {
-  0% { background-color: rgba(56, 189, 248, 0.18); }
+  0% { background-color: rgba(56, 189, 248, 0.22); }
   100% { background-color: transparent; }
 }
 .row-flash { animation: rowFlash 1.6s ease-out; }
