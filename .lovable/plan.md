@@ -1,89 +1,45 @@
-# SihatSatu — System Integration Upgrade Plan
+## Switch app to light mode
 
-Turn the existing clinic/hospital/status/appeal pages into one connected, backend-feeling demo without adding any real backend. All changes are additive — current routes, mock data, and step wizards stay intact.
+Convert the SihatSatu app from its current dark-only theme to a light theme. Keep the same sky/emerald/violet accent system so brand identity stays intact.
 
-## 1. New core: event bus + activity log
+### Changes
 
-**`src/lib/eventBus.ts`** — tiny pub/sub (`emit`, `subscribe`, `unsubscribe`). Typed event names:
-`claim.submitted`, `claim.auto.approved`, `claim.rejected`, `gl.requested`, `gl.ai.reviewing`, `gl.approved`, `discharge.queued`, `inventory.push`, `ops.notify`, `billing.update`, `tpa.sync`.
+**1. `src/styles.css`**
+- Remove `dark` class from `<html>` usage — switch `:root` tokens to light values:
+  - `--background`: near-white (`oklch(0.99 0.005 256)`)
+  - `--foreground`: slate-900
+  - `--card`, `--popover`: white
+  - `--muted`, `--secondary`, `--accent`: slate-100
+  - `--border`, `--input`: slate-200
+  - `--primary`: keep sky-500 family
+- Update `html, body` rule: `background-color: #f8fafc` (slate-50), `color: #0f172a` (slate-900).
+- Update `@layer base * { border-color }` to slate-200.
+- Update `.card-glow` hover shadow opacity for light bg.
+- Update `.row-flash` background tint (slightly stronger sky alpha for visibility on white).
 
-**`src/context/ActivityContext.tsx`** — subscribes to every event, keeps a rolling `activity[]` (max 50) with `{ id, ts, source: 'Clinic'|'Hospital'|'System'|'KAIZEN', level: 'info'|'success'|'warning', message, refCode? }`. Provider mounted in `__root.tsx` inside `ClaimsProvider`.
+**2. `src/routes/__root.tsx`**
+- Remove `className="dark"` from `<html>`.
+- Change main wrapper `bg-slate-900 text-slate-100` → `bg-slate-50 text-slate-900`.
 
-**`src/lib/integrations.ts`** — stubs `pushToInventory`, `notifyOps`, `updateBilling`. Each `console.log` + `eventBus.emit` so the activity feed lights up. Wired into hospital discharge step and clinic approval.
+**3. Component color sweep** (replace slate-dark utility classes with light equivalents). Files: `TopBar.tsx`, `ToastHost.tsx`, `ActivityFeed.tsx`, `StepBar.tsx`, `StatusBadge.tsx`, `CheckList.tsx`, `ClaimBreakdown.tsx`, `CodeBlock.tsx`, `GLTimeline.tsx`, `KaizenBadge.tsx`, `PatientCard.tsx`, `ScanProgress.tsx`, `DocumentDropzone.tsx`, and routes `index.tsx`, `clinic.tsx`, `hospital.tsx`, `status.tsx`, `appeal.tsx`.
 
-## 2. Live Activity Feed component
+Mapping rules applied consistently:
+- `bg-slate-900` / `bg-slate-800/*` (page & card surfaces) → `bg-white` or `bg-slate-50`
+- `border-slate-700` → `border-slate-200`
+- `text-slate-100` → `text-slate-900`
+- `text-slate-300/400` → `text-slate-600`
+- `text-slate-500` (meta) → `text-slate-500` (kept)
+- `bg-slate-950` (CodeBlock) → `bg-slate-900` (keep code dark for contrast/legibility) — code blocks stay dark intentionally.
+- Accent tints (`bg-sky-500/15`, `text-sky-300`, etc.) → lighter/darker variants: `bg-sky-100`, `text-sky-700`, `ring-sky-300` etc. Same for emerald/amber/violet/red used in badges, timelines, toasts.
+- Shadows: `shadow-black/40` → `shadow-slate-900/10`.
 
-**`src/components/ActivityFeed.tsx`** — floating panel bottom-right (above existing ToastHost), collapsible header "System Activity" with live dot + count badge. Expanded: scrollable list, mono timestamps, colored source pill (Clinic=sky, Hospital=violet, System=slate, KAIZEN=emerald), level icon. On viewports <768px renders as a single collapsed pill that opens a bottom sheet. Mounted in `__root.tsx`.
+**4. TopBar live badges**
+- Re-tune `LiveBadge` tone palette for white background: stronger text color (`text-emerald-700` instead of `text-emerald-300`), light bg (`bg-emerald-50`), border (`border-emerald-200`). Same pattern for sky/amber.
 
-## 3. Upgraded ToastHost
+**5. Camera modal (`DocumentDropzone.tsx`)**
+- Modal overlay stays dark (it's a camera viewfinder — dark is correct UX). Only adjust the trigger buttons and dropzone surface to light theme.
 
-Rework `src/components/ToastHost.tsx` + `ClaimsContext.showToast` signature to
-`showToast(message, opts?: { level?: 'success'|'warning'|'info', source?: 'Clinic'|'Hospital'|'System' })`. Existing call sites keep working (defaults to info/System). Visual: stacked, icon by level, source pill prefix (e.g. "Hospital → GL Approved"). Backward compatible — old `showToast("…")` still renders.
-
-## 4. Dynamic Status page
-
-Rewrite `src/routes/status.tsx` to keep `dashboardClaims` as the seed, but:
-- Store rows in local state seeded from mock.
-- Subscribe to `claim.submitted`, `claim.auto.approved`, `gl.approved`, `claim.rejected` — prepend or update matching `ref`.
-- Add row enter animation (`fade-in-up`) and a subtle row-flash on status change.
-- Add a "Live" pill in the header tied to feed activity.
-
-## 5. Hospital flow realism
-
-Update `src/routes/hospital.tsx` Step 3 + Step 4:
-- After "Check Documents" → ScanProgress already exists; afterwards inject a 2–4 s randomized "Queued in HealthMetrics TPA" → "Assigned to medical officer #A17" → "Cross-checking policy coverage…" micro-status sequence before showing the AI review summary. Each step emits an event.
-- GL issuance: keep current GL number/timeline, but submission delay randomized 2–4 s, and emits `gl.requested` → `gl.ai.reviewing` → `gl.approved`.
-- Discharge step: button "Queue discharge" calls `notifyOps()` + `pushToInventory()` + `updateBilling()` + emits `discharge.queued`. Toast: "Hospital → Discharge queued".
-
-## 6. Clinic flow events
-
-In `src/routes/clinic.tsx`:
-- Step 2 after scan completes: insert ~1.2 s "Insurer validation in progress…" line before showing the checklist (emit `tpa.sync`).
-- Step 3 submit: emit `claim.submitted` with the clinic ref.
-- Step 4 on approval: emit `claim.auto.approved` (so the Status page row lights up live) + `updateBilling()`.
-
-## 7. System Control Header
-
-Update `src/components/TopBar.tsx`:
-- Replace 2 static badges with 3 live indicators: `AIA ● Live` (emerald), `HealthMetrics ● Syncing` (amber, pulsing), `KAIZEN Engine ● Active` (sky). Pulse driven by CSS animation.
-- Wire a tiny ticker that flips HealthMetrics to "Syncing" briefly whenever a `tpa.sync` event fires.
-
-## 8. Demo Mode toggle
-
-Add `demoMode: boolean` + `setDemoMode` to `ClaimsContext`. TopBar gets a small switch ("Demo mode"). When ON:
-- ScanProgress `intervalMs` halved.
-- Random delays clamped to ~600 ms.
-- Clinic/Hospital wizards auto-advance to next step on completion (500 ms timer).
-- A subtle "DEMO" chip shows next to logo.
-Off = current manual behaviour.
-
-## 9. Visual polish pass
-
-- Add `.card-glow` utility in `src/styles.css` (`hover:` ring + soft sky shadow) and apply to PatientCard, ClaimBreakdown, GLTimeline, dashboard rows.
-- Audit clinic/hospital/status/appeal for: every `RM …` wrapped in `font-mono`; every GL/ref/policy ID wrapped in `font-mono text-sky-300`.
-- Tighten spacing tokens (consistent `p-5`, `gap-4`, `rounded-lg`) on top-level cards.
-- Add `border-slate-700/70` outline + faint inner gradient on outer wrappers for the "sci-fi dashboard" feel.
-
-## 10. Files changed / created
-
-Created:
-- `src/lib/eventBus.ts`
-- `src/lib/integrations.ts`
-- `src/context/ActivityContext.tsx`
-- `src/components/ActivityFeed.tsx`
-
-Edited:
-- `src/context/ClaimsContext.tsx` (toast levels/sources + demoMode)
-- `src/components/ToastHost.tsx` (stacked, icons, source pill)
-- `src/components/TopBar.tsx` (3 live indicators + demo switch)
-- `src/routes/__root.tsx` (mount ActivityProvider + ActivityFeed)
-- `src/routes/clinic.tsx` (emit events, validation delay)
-- `src/routes/hospital.tsx` (realistic delays, micro-status, discharge integrations)
-- `src/routes/status.tsx` (live subscription, row animations)
-- `src/styles.css` (card-glow, pulse-soft utility)
-
-## Out of scope
-
-- No real backend, no auth, no persistence beyond in-memory state.
-- No changes to appeal typewriter, KAIZEN intake stubs, mock data shape, or routing.
-- No new dependencies.
+### Out of scope
+- No layout changes, no copy changes, no logic changes.
+- No theme toggle — purely a one-way switch to light mode (can add toggle later if requested).
+- Brand accent hues unchanged; only their light/dark shade variants are swapped.

@@ -27,12 +27,12 @@ export function ScanProgress({
   const current = labels[Math.min(idx, labels.length - 1)];
 
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-4">
-      <div className="flex items-center justify-between text-xs text-slate-400">
+    <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="flex items-center justify-between text-xs text-slate-600">
         <span>{done ? "Scan complete" : current}</span>
-        <span className="font-mono text-sky-300">{Math.round(done ? 100 : pct)}%</span>
+        <span className="font-mono text-sky-700">{Math.round(done ? 100 : pct)}%</span>
       </div>
-      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-700">
+      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
         <div
           className="h-full rounded-full bg-gradient-to-r from-sky-500 to-sky-400 transition-all"
           style={{ width: `${done ? 100 : pct}%`, transitionDuration: `${intervalMs}ms` }}

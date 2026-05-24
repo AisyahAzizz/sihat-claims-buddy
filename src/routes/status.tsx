@@ -90,14 +90,14 @@ function Status() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100">Claims Dashboard</h1>
-          <p className="text-sm text-slate-400">All claims processed by the SihatSatu Claims Agent.</p>
+          <h1 className="text-xl font-semibold text-slate-900">Claims Dashboard</h1>
+          <p className="text-sm text-slate-600">All claims processed by the SihatSatu Claims Agent.</p>
         </div>
         <span
           className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-medium ${
             isLive
-              ? "border-sky-500/40 bg-sky-500/10 text-sky-300"
-              : "border-slate-700 bg-slate-800/40 text-slate-400"
+              ? "border-sky-300 bg-sky-50 text-sky-700"
+              : "border-slate-200 bg-white text-slate-600"
           }`}
         >
           <span className="relative flex h-1.5 w-1.5">
@@ -115,9 +115,9 @@ function Status() {
         <Stat label="Rejected" value={totals.rejected} tone="red" />
       </div>
 
-      <div className="card-glow overflow-hidden rounded-lg border border-slate-700/70 bg-slate-800/40">
+      <div className="card-glow overflow-hidden rounded-lg border border-slate-200 bg-white">
         <table className="w-full text-sm">
-          <thead className="bg-slate-900/60 text-left text-[11px] uppercase tracking-wide text-slate-400">
+          <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wide text-slate-600">
             <tr>
               <Th>Ref</Th>
               <Th>Patient</Th>
@@ -130,34 +130,34 @@ function Status() {
               <Th>Action</Th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-700">
+          <tbody className="divide-y divide-slate-200">
             {rows.map((c) => (
               <tr
                 key={c.ref}
-                className={`hover:bg-slate-800/40 ${c._flashKey ? "row-flash" : ""}`}
+                className={`hover:bg-white ${c._flashKey ? "row-flash" : ""}`}
               >
                 <Td>
-                  <span className="font-mono text-sky-300">{c.ref}</span>
+                  <span className="font-mono text-sky-700">{c.ref}</span>
                 </Td>
                 <Td>{c.patient}</Td>
-                <Td className="text-slate-400">{c.type}</Td>
-                <Td className="text-slate-400">{c.provider}</Td>
+                <Td className="text-slate-600">{c.type}</Td>
+                <Td className="text-slate-600">{c.provider}</Td>
                 <Td className="text-right font-mono">RM {c.amount.toLocaleString()}</Td>
-                <Td className="text-slate-400">{c.insurer}</Td>
+                <Td className="text-slate-600">{c.insurer}</Td>
                 <Td>
                   <StatusBadge status={c.status} />
                 </Td>
-                <Td className="font-mono text-xs text-slate-400">{c.submitted}</Td>
+                <Td className="font-mono text-xs text-slate-600">{c.submitted}</Td>
                 <Td>
                   {c.status === "rejected" ? (
                     <Link
                       to="/appeal"
-                      className="rounded-md border border-red-500/40 px-2.5 py-1 text-xs font-medium text-red-300 hover:bg-red-500/10"
+                      className="rounded-md border border-red-300 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
                     >
                       Draft Appeal
                     </Link>
                   ) : (
-                    <button className="text-xs text-sky-300 hover:underline">View</button>
+                    <button className="text-xs text-sky-700 hover:underline">View</button>
                   )}
                 </Td>
               </tr>
@@ -173,17 +173,17 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
   return <th className={`px-4 py-3 font-medium ${className ?? ""}`}>{children}</th>;
 }
 function Td({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-4 py-3 text-slate-200 ${className ?? ""}`}>{children}</td>;
+  return <td className={`px-4 py-3 text-slate-800 ${className ?? ""}`}>{children}</td>;
 }
 
 function Stat({ label, value, tone }: { label: string; value: number; tone: "slate" | "emerald" | "red" }) {
   const toneMap = {
-    slate: "text-slate-100",
-    emerald: "text-emerald-300",
-    red: "text-red-300",
+    slate: "text-slate-900",
+    emerald: "text-emerald-700",
+    red: "text-red-700",
   };
   return (
-    <div className="card-glow rounded-lg border border-slate-700/70 bg-slate-800/40 p-4">
+    <div className="card-glow rounded-lg border border-slate-200 bg-white p-4">
       <div className="text-[11px] uppercase tracking-wide text-slate-500">{label}</div>
       <div className={`mt-2 font-mono text-2xl font-semibold ${toneMap[tone]}`}>
         RM {value.toLocaleString()}

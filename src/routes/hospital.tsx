@@ -26,7 +26,7 @@ function HospitalWizard() {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <StepBar steps={STEPS} current={hospitalStep} />
-      <div className="flex items-start gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">
+      <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
         <span>
           Traditional GL approval: 30 min – 6 hours. <strong>KAIZEN target: under 8 minutes.</strong>
@@ -89,7 +89,7 @@ function Step1({ onNext }: { onNext: () => void }) {
           />
         </div>
         {urgency === "semi" && (
-          <div className="mt-3 rounded-lg border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sm text-sky-200">
+          <div className="mt-3 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
             Semi-urgent: hospital will not admit without GL. KAIZEN will draft and submit within 2 minutes.
           </div>
         )}
@@ -127,13 +127,13 @@ function UrgencyCard({
       className={[
         "flex flex-col items-start rounded-lg border p-4 text-left transition",
         selected
-          ? "border-sky-500/60 bg-sky-500/10 ring-1 ring-sky-500/40"
-          : "border-slate-700 bg-slate-800/40 hover:bg-slate-800/70",
+          ? "border-sky-400 bg-sky-50 ring-1 ring-sky-300"
+          : "border-slate-200 bg-white hover:bg-slate-100",
       ].join(" ")}
     >
       <span className="text-xl">{icon}</span>
-      <span className="mt-2 text-sm font-medium text-slate-100">{label}</span>
-      <span className="mt-0.5 text-xs text-slate-400">{desc}</span>
+      <span className="mt-2 text-sm font-medium text-slate-900">{label}</span>
+      <span className="mt-0.5 text-xs text-slate-600">{desc}</span>
     </button>
   );
 }
@@ -142,12 +142,12 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
   const [just, setJust] = useState(hospitalCase.justification);
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-5">
+      <div className="rounded-lg border border-slate-200 bg-white p-5">
         <div className="mb-1 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-100">Guarantee Letter — Pre-filled by KAIZEN</h3>
-          <span className="font-mono text-xs text-sky-300">{hospitalCase.glRef}</span>
+          <h3 className="text-sm font-semibold text-slate-900">Guarantee Letter — Pre-filled by KAIZEN</h3>
+          <span className="font-mono text-xs text-sky-700">{hospitalCase.glRef}</span>
         </div>
-        <p className="text-xs text-sky-300">
+        <p className="text-xs text-sky-700">
           8 insurer questions answered automatically. No manual paperwork.
         </p>
 
@@ -158,11 +158,11 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
           <Field label="Attending specialist" value={`${hospitalCase.doctor} · ${hospitalCase.mmc}`} mono />
           <Field
             label="Policy status"
-            value={<span className="text-emerald-300">✓ Active · No waiting period · Cardiac covered</span>}
+            value={<span className="text-emerald-700">✓ Active · No waiting period · Cardiac covered</span>}
           />
           <Field
             label="Pre-existing flag"
-            value={<span className="text-amber-300">⚠ T2DM listed as pre-existing · cardiac benefit not excluded</span>}
+            value={<span className="text-amber-700">⚠ T2DM listed as pre-existing · cardiac benefit not excluded</span>}
           />
         </dl>
 
@@ -172,12 +172,12 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
             value={just}
             onChange={(e) => setJust(e.target.value)}
             rows={6}
-            className="w-full rounded-md border border-slate-700 bg-slate-900/60 p-3 text-sm leading-relaxed text-slate-100 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+            className="w-full rounded-md border border-slate-200 bg-slate-50 p-3 text-sm leading-relaxed text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
           />
         </div>
       </div>
 
-      <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+      <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
         KAIZEN pre-answered all 8 standard insurer checks before submission. In the traditional process,
         each unanswered question adds 20–40 minutes of back-and-forth.
       </div>
@@ -185,7 +185,7 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
-          className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
+          className="rounded-md border border-slate-200 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
         >
           Back
         </button>
@@ -212,7 +212,7 @@ function Field({ label, value, mono }: { label: string; value: React.ReactNode; 
   return (
     <div>
       <dt className="text-[11px] uppercase tracking-wide text-slate-500">{label}</dt>
-      <dd className={["mt-0.5 text-sm text-slate-100", mono && "font-mono"].filter(Boolean).join(" ")}>
+      <dd className={["mt-0.5 text-sm text-slate-900", mono && "font-mono"].filter(Boolean).join(" ")}>
         {value}
       </dd>
     </div>
@@ -259,8 +259,8 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
 
   return (
     <div className="space-y-6">
-      <div className="card-glow rounded-lg border border-slate-700/70 bg-slate-800/60 p-5">
-        <h3 className="mb-4 text-sm font-semibold text-slate-100">Supporting documents</h3>
+      <div className="card-glow rounded-lg border border-slate-200 bg-white p-5">
+        <h3 className="mb-4 text-sm font-semibold text-slate-900">Supporting documents</h3>
         <DocumentDropzone
           seed={hospitalCase.documents as DocFile[]}
           files={docs}
@@ -290,10 +290,10 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
       {scanned && (
         <>
           <CheckList items={hospitalCase.checks} />
-          <div className="rounded-lg border border-slate-700/70 bg-slate-800/40 px-4 py-3 text-sm text-slate-300">
-            <span className="font-medium text-emerald-300">7 passed</span> ·{" "}
-            <span className="font-medium text-amber-300">1 advisory</span> ·{" "}
-            <span className="font-medium text-slate-100">GL likely to be approved</span>
+          <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+            <span className="font-medium text-emerald-700">7 passed</span> ·{" "}
+            <span className="font-medium text-amber-700">1 advisory</span> ·{" "}
+            <span className="font-medium text-slate-900">GL likely to be approved</span>
           </div>
 
           {microIdx >= 0 && !showQA && (
@@ -301,12 +301,12 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
               {MICRO_STATUS.slice(0, microIdx + 1).map((s, i) => (
                 <div
                   key={i}
-                  className="fade-in-up flex items-center gap-3 rounded-md border border-sky-500/30 bg-sky-500/5 px-3 py-2 text-sm text-sky-200"
+                  className="fade-in-up flex items-center gap-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-800"
                 >
                   {i === microIdx ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-sky-400" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-sky-600" />
                   ) : (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                   )}
                   <span>{s.label}</span>
                 </div>
@@ -315,15 +315,15 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
           )}
 
           {showQA && (
-            <div className="fade-in-up rounded-lg border border-amber-400/30 bg-amber-400/5 p-5">
-              <h4 className="mb-3 text-sm font-semibold text-amber-200">
+            <div className="fade-in-up rounded-lg border border-amber-200 bg-amber-50 p-5">
+              <h4 className="mb-3 text-sm font-semibold text-amber-800">
                 Insurer questions — auto-answered by KAIZEN
               </h4>
               <div className="space-y-4">
                 {hospitalCase.qa.map((qa, i) => (
-                  <div key={i} className="rounded-md border border-slate-700 bg-slate-900/40 p-3">
-                    <div className="text-xs font-medium text-amber-300">Q: {qa.q}</div>
-                    <div className="mt-1 text-sm text-slate-100">A: {qa.a}</div>
+                  <div key={i} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                    <div className="text-xs font-medium text-amber-700">Q: {qa.q}</div>
+                    <div className="mt-1 text-sm text-slate-900">A: {qa.a}</div>
                   </div>
                 ))}
               </div>
@@ -336,7 +336,7 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
-          className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
+          className="rounded-md border border-slate-200 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
         >
           Back
         </button>
@@ -406,35 +406,35 @@ function Step4({ onNext }: { onNext: () => void }) {
       <GLTimeline events={events} />
 
       {!issued ? (
-        <div className="card-glow rounded-lg border border-sky-500/40 bg-sky-500/10 p-5">
-          <div className="flex items-center gap-2 text-sm font-medium text-sky-200">
+        <div className="card-glow rounded-lg border border-sky-300 bg-sky-50 p-5">
+          <div className="flex items-center gap-2 text-sm font-medium text-sky-800">
             <Loader2 className="h-4 w-4 animate-spin" />
             Awaiting HealthMetrics response…
           </div>
-          <div className="mt-1 text-xs text-sky-300/80">
+          <div className="mt-1 text-xs text-sky-700">
             Traditional wait: 2–6 hours · KAIZEN target: under 8 minutes
           </div>
         </div>
       ) : (
-        <div className="fade-in-up rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-6">
+        <div className="fade-in-up rounded-xl border border-emerald-300 bg-emerald-50 p-6">
           <div className="flex items-start gap-3">
-            <CheckCircle2 className="h-8 w-8 shrink-0 text-emerald-300" />
+            <CheckCircle2 className="h-8 w-8 shrink-0 text-emerald-700" />
             <div className="flex-1">
-              <div className="text-xl font-semibold text-emerald-200">GL Approved</div>
-              <div className="mt-1 text-sm text-emerald-200/70">
+              <div className="text-xl font-semibold text-emerald-800">GL Approved</div>
+              <div className="mt-1 text-sm text-emerald-700">
                 HealthMetrics TPA · AIA Smart MedCare Plus
               </div>
-              <div className="mt-3 inline-block rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-200">
+              <div className="mt-3 inline-block rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-800">
                 Total wait: <span className="font-mono">6 min 14 sec</span> vs traditional average{" "}
                 <span className="font-mono">3.2 hrs</span>
               </div>
               <dl className="mt-5 grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
-                <Field label="GL Number" value={<span className="font-mono text-sky-300">{hospitalCase.glDetails.glNumber}</span>} />
+                <Field label="GL Number" value={<span className="font-mono text-sky-700">{hospitalCase.glDetails.glNumber}</span>} />
                 <Field label="Approved amount" value={<span className="font-mono">RM {hospitalCase.glDetails.approvedAmount.toLocaleString()}</span>} />
                 <Field label="Room" value={hospitalCase.glDetails.room} />
                 <Field label="Valid until" value={hospitalCase.glDetails.validUntil} />
               </dl>
-              <p className="mt-4 text-xs leading-relaxed text-emerald-200/80">
+              <p className="mt-4 text-xs leading-relaxed text-emerald-700">
                 <strong>Conditions:</strong> {hospitalCase.glDetails.conditions}
               </p>
             </div>
@@ -460,7 +460,7 @@ function Step5({ onReset }: { onReset: () => void }) {
   const { showToast } = useClaims();
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+      <div className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
         GL secured. {rahman.name} admitted to Ward 4B, Sunway Medical Centre.
       </div>
 
@@ -471,9 +471,9 @@ function Step5({ onReset }: { onReset: () => void }) {
         <ClaimBreakdown items={hospitalCase.claimBreakdown} total={hospitalCase.claimTotal} />
       </div>
 
-      <div className="rounded-lg border border-slate-700 bg-slate-800/40 p-5">
-        <h4 className="mb-3 text-sm font-semibold text-slate-100">What KAIZEN solved</h4>
-        <ul className="space-y-2 text-sm text-slate-200">
+      <div className="rounded-lg border border-slate-200 bg-white p-5">
+        <h4 className="mb-3 text-sm font-semibold text-slate-900">What KAIZEN solved</h4>
+        <ul className="space-y-2 text-sm text-slate-800">
           {[
             "GL pre-filled from patient record — no manual paperwork",
             "8 insurer questions answered before submission",
@@ -482,7 +482,7 @@ function Step5({ onReset }: { onReset: () => void }) {
             "Claim will auto-file on discharge — zero staff intervention",
           ].map((it) => (
             <li key={it} className="flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
               <span>{it}</span>
             </li>
           ))}
@@ -514,7 +514,7 @@ function Step5({ onReset }: { onReset: () => void }) {
         <Link
           to="/appeal"
           onClick={() => onReset()}
-          className="inline-flex items-center gap-2 rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+          className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm text-slate-800 hover:bg-slate-100"
         >
           Claims Defense Readiness <ArrowRightCircle className="h-4 w-4" />
         </Link>

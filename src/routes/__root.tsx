@@ -19,8 +19,8 @@ function NotFoundComponent() {
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-slate-100">404</h1>
-        <p className="mt-2 text-sm text-slate-400">
+        <h1 className="text-7xl font-bold text-slate-900">404</h1>
+        <p className="mt-2 text-sm text-slate-600">
           That page doesn't exist in the Claims module.
         </p>
         <Link
@@ -40,8 +40,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold text-slate-100">Something went wrong</h1>
-        <p className="mt-2 text-sm text-slate-400">Try refreshing the page.</p>
+        <h1 className="text-xl font-semibold text-slate-900">Something went wrong</h1>
+        <p className="mt-2 text-sm text-slate-600">Try refreshing the page.</p>
         <button
           onClick={() => {
             router.invalidate();
@@ -102,7 +102,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <head>
         <HeadContent />
       </head>
@@ -120,7 +120,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ClaimsProvider>
         <ActivityProvider>
-          <div className="min-h-screen bg-slate-900 text-slate-100">
+          <div className="min-h-screen bg-slate-50 text-slate-900">
             <TopBar />
             <main className="mx-auto max-w-7xl px-6 py-8">
               <Outlet />
