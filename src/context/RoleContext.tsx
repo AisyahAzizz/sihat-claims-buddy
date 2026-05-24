@@ -7,7 +7,10 @@ type Ctx = {
   setRole: (r: Role) => void;
 };
 
-const RoleContext = createContext<Ctx | null>(null);
+const RoleContext = createContext<Ctx>({
+  currentRole: "provider",
+  setRole: () => {},
+});
 
 const STORAGE_KEY = "sihatsatu.role";
 
@@ -36,7 +39,5 @@ export function RoleProvider({ children }: { children: ReactNode }) {
 }
 
 export function useRole() {
-  const ctx = useContext(RoleContext);
-  if (!ctx) throw new Error("useRole must be inside RoleProvider");
-  return ctx;
+  return useContext(RoleContext);
 }
