@@ -398,13 +398,21 @@ function Step4({ onNext }: { onNext: () => void }) {
         refCode: hospitalCase.glRef,
       });
     }, reviewDelay);
-    const t2 = setTimeout(() => {
+    const t2 = setTimeout(async () => {
       setIssued(true);
+      const ref = currentHospitalRef ?? hospitalCase.glRef;
+      if (currentHospitalRef) {
+        try {
+          await decideClaim(ref, "approved", "AIA Medical Officer #A17");
+        } catch (e) {
+          console.error("decideClaim (hospital) failed", e);
+        }
+      }
       eventBus.emit("gl.approved", {
         source: "Hospital",
         level: "success",
         message: `GL approved · RM ${hospitalCase.glDetails.approvedAmount.toLocaleString()}`,
-        refCode: hospitalCase.glRef,
+        refCode: ref,
         amount: hospitalCase.glDetails.approvedAmount,
       });
     }, reviewDelay + (demoMode ? 600 : 1500));
