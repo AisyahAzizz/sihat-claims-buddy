@@ -172,7 +172,7 @@ async function logEvent(e: {
     source: e.source,
     level: e.level,
     message: e.message,
-    payload: e.payload ?? null,
+    payload: (e.payload ?? null) as never,
   });
   if (error) console.error("logEvent failed", error);
 }
