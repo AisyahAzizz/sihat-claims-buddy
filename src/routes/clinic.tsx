@@ -186,17 +186,33 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
         </button>
         <button
           disabled={loading}
-          onClick={() => {
+          onClick={async () => {
             setLoading(true);
+            const ref = `${clinicClaim.json.claimRef}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
+            try {
+              await submitClaim({
+                ref_code: ref,
+                patient_name: rahman.name,
+                patient_ic: rahman.myKad,
+                provider_name: clinicClaim.clinic,
+                claim_type: "clinic",
+                amount: clinicClaim.total,
+                diagnosis: `${clinicClaim.icd10} — ${clinicClaim.icd10Desc}`,
+              });
+            } catch (e) {
+              console.error("submitClaim failed", e);
+            }
             eventBus.emit("claim.submitted", {
               source: "Clinic",
               level: "info",
               message: "Clinic claim submitted to AIA",
-              refCode: clinicClaim.json.claimRef,
+              refCode: ref,
               amount: clinicClaim.total,
-              patient: "Encik Rahman",
-              provider: "Klinik Sihat",
+              patient: rahman.name,
+              provider: clinicClaim.clinic,
             });
+            // stash ref for Step 4
+            (window as unknown as { __lastClinicRef?: string }).__lastClinicRef = ref;
             setTimeout(onNext, 1500);
           }}
           className="inline-flex items-center gap-2 rounded-md bg-sky-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-sky-400 disabled:opacity-70"
