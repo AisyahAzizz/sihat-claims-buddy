@@ -206,10 +206,10 @@ function GovDashboard() {
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {rows.map((c) => (
-                  <tr key={c.ref} className={`hover:bg-slate-50 ${c._flashKey ? "row-flash" : ""}`}>
+                  <tr key={c.id} className={`hover:bg-slate-50 ${c._flashKey ? "row-flash" : ""}`}>
                     <Td>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs text-sky-700">{c.ref}</span>
+                        <span className="font-mono text-xs text-sky-700">{c.ref_code}</span>
                         {c.flagged && (
                           <span className="rounded border border-amber-300 bg-amber-50 px-1 py-0.5 text-[9px] font-semibold uppercase text-amber-700">
                             Flagged
@@ -217,30 +217,37 @@ function GovDashboard() {
                         )}
                       </div>
                     </Td>
-                    <Td>{c.patient}</Td>
-                    <Td className="text-slate-600">{c.type}</Td>
-                    <Td className="text-slate-600">{c.provider}</Td>
-                    <Td className="text-right font-mono">RM {c.amount.toLocaleString()}</Td>
-                    <Td><StatusBadge status={c.status} /></Td>
-                    <Td className="font-mono text-xs text-slate-600">{c.submitted}</Td>
+                    <Td>{c.patient_name}</Td>
+                    <Td className="text-slate-600">{c.claim_type === "clinic" ? "Outpatient" : "Inpatient GL"}</Td>
+                    <Td className="text-slate-600">{c.provider_name}</Td>
+                    <Td className="text-right font-mono">RM {Number(c.amount).toLocaleString()}</Td>
+                    <Td><StatusBadge status={statusLabel(c.status)} /></Td>
+                    <Td className="font-mono text-xs text-slate-600">
+                      {new Date(c.created_at).toLocaleString("en-MY", {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </Td>
                     <Td>
                       <div className="flex justify-end gap-1">
                         <ActionBtn
-                          onClick={() => handleAction(c.ref, "approve")}
+                          onClick={() => handleAction(c.ref_code, "approve")}
                           tone="emerald"
                           icon={<CheckCircle2 className="h-3 w-3" />}
                           label="Approve"
-                          disabled={c.status === "approved"}
+                          disabled={c.status === "approved" || c.status === "auto_approved"}
                         />
                         <ActionBtn
-                          onClick={() => handleAction(c.ref, "reject")}
+                          onClick={() => handleAction(c.ref_code, "reject")}
                           tone="red"
                           icon={<XCircle className="h-3 w-3" />}
                           label="Reject"
                           disabled={c.status === "rejected"}
                         />
                         <ActionBtn
-                          onClick={() => handleAction(c.ref, "flag")}
+                          onClick={() => handleAction(c.ref_code, "flag")}
                           tone="amber"
                           icon={<Flag className="h-3 w-3" />}
                           label="Flag"
