@@ -1,7 +1,8 @@
+import type { ReactNode } from "react";
 import { useClaims, ToastLevel, ToastSource } from "@/context/ClaimsContext";
 import { CheckCircle2, AlertTriangle, Info } from "lucide-react";
 
-const LEVEL_STYLE: Record<ToastLevel, { border: string; icon: JSX.Element }> = {
+const LEVEL_STYLE: Record<ToastLevel, { border: string; icon: ReactNode }> = {
   success: {
     border: "border-emerald-500/40",
     icon: <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />,
