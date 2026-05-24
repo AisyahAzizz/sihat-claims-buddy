@@ -120,7 +120,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ClaimsProvider>
         <ActivityProvider>
-          <div className="min-h-screen bg-slate-900 text-slate-900">
+          <div className="min-h-screen bg-slate-50 text-slate-900">
             <TopBar />
             <main className="mx-auto max-w-7xl px-6 py-8">
               <Outlet />
