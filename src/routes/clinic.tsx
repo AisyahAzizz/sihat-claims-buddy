@@ -12,6 +12,7 @@ import { useClaims } from "@/context/ClaimsContext";
 import { rahman, clinicClaim } from "@/data/mockData";
 import { eventBus } from "@/lib/eventBus";
 import { updateBilling } from "@/lib/integrations";
+import { submitClaim, autoApprove } from "@/lib/claimsApi";
 import { ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
 
 
