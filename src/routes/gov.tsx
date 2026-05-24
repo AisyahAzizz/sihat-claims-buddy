@@ -1,10 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
-import { dashboardClaims } from "@/data/mockData";
 import { useClaims } from "@/context/ClaimsContext";
-import { eventBus, SystemEventPayload } from "@/lib/eventBus";
+import { eventBus } from "@/lib/eventBus";
 import { updateBilling } from "@/lib/integrations";
+import {
+  listClaims,
+  decideClaim,
+  subscribeClaims,
+  type ClaimRow,
+} from "@/lib/claimsApi";
 import {
   Landmark,
   AlertTriangle,
@@ -23,84 +28,45 @@ export const Route = createFileRoute("/gov")({
   }),
 });
 
-type Row = (typeof dashboardClaims)[number] & { _flashKey?: number; flagged?: boolean };
+type Row = ClaimRow & { _flashKey?: number; flagged?: boolean };
+
+function statusLabel(s: ClaimRow["status"]) {
+  if (s === "auto_approved" || s === "approved") return "approved";
+  if (s === "rejected") return "rejected";
+  if (s === "flagged") return "flagged";
+  return "pending";
+}
 
 function GovDashboard() {
   const { showToast } = useClaims();
-  const [rows, setRows] = useState<Row[]>(() => [...dashboardClaims]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [lastEventAt, setLastEventAt] = useState(0);
 
+  // initial load
   useEffect(() => {
-    const upsert = (ref: string, patch: Partial<Row>, fallback?: Row) => {
+    listClaims()
+      .then((data) => setRows(data.map((r) => ({ ...r, flagged: r.status === "flagged" }))))
+      .catch((e) => console.error("listClaims failed", e));
+  }, []);
+
+  // realtime sync from DB
+  useEffect(() => {
+    const off = subscribeClaims((row, evt) => {
       setLastEventAt(Date.now());
       setRows((prev) => {
-        const i = prev.findIndex((r) => r.ref === ref);
-        if (i === -1 && fallback) return [{ ...fallback, ...patch, _flashKey: Date.now() }, ...prev];
-        if (i === -1) return prev;
+        const i = prev.findIndex((r) => r.id === row.id);
+        if (evt === "DELETE") return prev.filter((r) => r.id !== row.id);
+        if (i === -1)
+          return [{ ...row, flagged: row.status === "flagged", _flashKey: Date.now() }, ...prev];
         const next = [...prev];
-        next[i] = { ...next[i], ...patch, _flashKey: Date.now() };
+        next[i] = { ...next[i], ...row, flagged: row.status === "flagged", _flashKey: Date.now() };
         return next;
       });
-    };
-
-    const offs = [
-      eventBus.subscribe("claim.submitted", (p: SystemEventPayload) => {
-        const ref = (p.refCode as string) || `SSATU-${Date.now()}`;
-        upsert(
-          ref,
-          { status: "pending" as never },
-          {
-            ref,
-            patient: (p.patient as string) || "Encik Rahman",
-            type: "Outpatient",
-            provider: (p.provider as string) || "Klinik Sihat",
-            amount: (p.amount as number) || 99,
-            insurer: "AIA",
-            status: "pending" as never,
-            submitted: new Date().toLocaleString("en-MY", {
-              day: "2-digit",
-              month: "short",
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          },
-        );
-      }),
-      eventBus.subscribe("gl.requested", (p: SystemEventPayload) => {
-        const ref = (p.refCode as string) || `GL-${Date.now()}`;
-        upsert(
-          ref,
-          { status: "pending" as never },
-          {
-            ref,
-            patient: (p.patient as string) || "Encik Rahman",
-            type: "Inpatient GL",
-            provider: (p.provider as string) || "Sunway Medical",
-            amount: (p.amount as number) || 18000,
-            insurer: "AIA",
-            status: "pending" as never,
-            submitted: new Date().toLocaleString("en-MY", {
-              day: "2-digit",
-              month: "short",
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          },
-        );
-      }),
-      eventBus.subscribe("claim.auto.approved", (p) => {
-        upsert((p.refCode as string) ?? "", { status: "approved" as never });
-      }),
-      eventBus.subscribe("gl.approved", (p) => {
-        upsert((p.refCode as string) ?? "", { status: "approved" as never });
-      }),
-      eventBus.subscribe("claim.rejected", (p) => {
-        const ref = p.refCode as string;
-        if (ref) upsert(ref, { status: "rejected" as never });
-      }),
-    ];
-    return () => offs.forEach((o) => o?.());
+    });
+    return off;
   }, []);
+
+
 
   const totals = useMemo(
     () =>
