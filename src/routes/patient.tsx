@@ -1,7 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { rahman, hospitalCase, clinicClaim } from "@/data/mockData";
-import { eventBus, SystemEventPayload } from "@/lib/eventBus";
+import { rahman, hospitalCase } from "@/data/mockData";
+import {
+  listEventsForPatient,
+  subscribeClaimEvents,
+  type ClaimEventRow,
+} from "@/lib/claimsApi";
 import {
   User,
   CheckCircle2,
@@ -18,35 +22,18 @@ export const Route = createFileRoute("/patient")({
   head: () => ({ meta: [{ title: "My Health — SihatSatu" }] }),
 });
 
+type Status = "submitted" | "approved" | "rejected" | "pending";
+
 type TimelineItem = {
-  id: number;
+  id: string;
   ts: number;
   title: string;
   desc?: string;
   ref?: string;
-  status: "submitted" | "approved" | "rejected" | "pending";
+  status: Status;
 };
 
-const SEED: TimelineItem[] = [
-  {
-    id: 1,
-    ts: Date.now() - 1000 * 60 * 60 * 26,
-    title: "Outpatient claim approved",
-    desc: "Klinik Sihat · Diabetes follow-up · RM 99.00",
-    ref: clinicClaim.json.claimRef,
-    status: "approved",
-  },
-  {
-    id: 2,
-    ts: Date.now() - 1000 * 60 * 60 * 24,
-    title: "Cardiac admission GL approved",
-    desc: "Sunway Medical · RM 18,000 cover · valid until 27 May 2026",
-    ref: hospitalCase.glDetails.glNumber,
-    status: "approved",
-  },
-];
-
-const ICON: Record<TimelineItem["status"], { icon: typeof Clock; color: string; ring: string }> = {
+const ICON: Record<Status, { icon: typeof Clock; color: string; ring: string }> = {
   submitted: { icon: Clock, color: "text-sky-700", ring: "ring-sky-200 bg-sky-50" },
   approved: { icon: CheckCircle2, color: "text-emerald-700", ring: "ring-emerald-200 bg-emerald-50" },
   rejected: { icon: XCircle, color: "text-red-700", ring: "ring-red-200 bg-red-50" },
@@ -58,60 +45,51 @@ function formatTime(ts: number) {
   return d.toLocaleString("en-MY", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
+function eventToItem(row: ClaimEventRow): TimelineItem {
+  const map: Record<string, { title: string; status: Status }> = {
+    "claim.submitted": { title: "Claim submitted to insurer", status: "submitted" },
+    "gl.requested": { title: "Guarantee Letter requested", status: "pending" },
+    "claim.auto.approved": { title: "Claim auto-approved", status: "approved" },
+    "claim.approved": { title: "Claim approved", status: "approved" },
+    "gl.approved": { title: "GL approved", status: "approved" },
+    "claim.rejected": { title: "Claim rejected", status: "rejected" },
+    "claim.flagged": { title: "Claim flagged for review", status: "pending" },
+  };
+  const meta = map[row.event_name] ?? { title: row.event_name, status: "submitted" as Status };
+  return {
+    id: row.id,
+    ts: new Date(row.created_at).getTime(),
+    title: meta.title,
+    desc: row.message ?? undefined,
+    status: meta.status,
+  };
+}
+
 function PatientDashboard() {
-  const [items, setItems] = useState<TimelineItem[]>(SEED);
-  const usedLimit = 15489; // mock used (approx 18K GL + 99 clinic - hidden complexities)
+  const [items, setItems] = useState<TimelineItem[]>([]);
+  const usedLimit = 15489;
   const remaining = rahman.annualLimit - usedLimit;
   const pct = (usedLimit / rahman.annualLimit) * 100;
 
   useEffect(() => {
-    const add = (item: Omit<TimelineItem, "id" | "ts">) =>
-      setItems((p) => [{ ...item, id: Date.now() + Math.random(), ts: Date.now() }, ...p]);
-
-    const offs = [
-      eventBus.subscribe("claim.submitted", (p: SystemEventPayload) =>
-        add({
-          title: "Claim submitted to insurer",
-          desc: (p.message as string) || "Outpatient claim filed",
-          ref: p.refCode as string,
-          status: "submitted",
-        }),
-      ),
-      eventBus.subscribe("gl.requested", (p) =>
-        add({
-          title: "Guarantee Letter requested",
-          desc: "Hospital admission · awaiting insurer review",
-          ref: p.refCode as string,
-          status: "pending",
-        }),
-      ),
-      eventBus.subscribe("claim.auto.approved", (p) =>
-        add({
-          title: "Claim approved",
-          desc: (p.message as string) || "Auto-approved by insurer",
-          ref: p.refCode as string,
-          status: "approved",
-        }),
-      ),
-      eventBus.subscribe("gl.approved", (p) =>
-        add({
-          title: "GL approved",
-          desc: (p.message as string) || "Hospital admission cover confirmed",
-          ref: p.refCode as string,
-          status: "approved",
-        }),
-      ),
-      eventBus.subscribe("claim.rejected", (p) =>
-        add({
-          title: "Claim rejected",
-          desc: "Eligible for appeal",
-          ref: p.refCode as string,
-          status: "rejected",
-        }),
-      ),
-    ];
-    return () => offs.forEach((o) => o?.());
+    listEventsForPatient(rahman.name)
+      .then((events) => setItems(events.map(eventToItem)))
+      .catch((e) => console.error("listEventsForPatient failed", e));
   }, []);
+
+  useEffect(() => {
+    const off = subscribeClaimEvents((row) => {
+      // We don't know the patient_name from the event alone — keep it simple:
+      // append everything (demo scope: one patient). Tighten when auth lands.
+      setItems((prev) => {
+        if (prev.some((x) => x.id === row.id)) return prev;
+        return [eventToItem(row), ...prev];
+      });
+    });
+    return off;
+  }, []);
+
+
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">

@@ -1,10 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
-import { dashboardClaims } from "@/data/mockData";
 import { useClaims } from "@/context/ClaimsContext";
-import { eventBus, SystemEventPayload } from "@/lib/eventBus";
+import { eventBus } from "@/lib/eventBus";
 import { updateBilling } from "@/lib/integrations";
+import {
+  listClaims,
+  decideClaim,
+  subscribeClaims,
+  type ClaimRow,
+} from "@/lib/claimsApi";
 import {
   Landmark,
   AlertTriangle,
@@ -23,94 +28,56 @@ export const Route = createFileRoute("/gov")({
   }),
 });
 
-type Row = (typeof dashboardClaims)[number] & { _flashKey?: number; flagged?: boolean };
+type Row = ClaimRow & { _flashKey?: number; flagged?: boolean };
+
+function statusLabel(s: ClaimRow["status"]): "approved" | "pending" | "rejected" | "warning" {
+  if (s === "auto_approved" || s === "approved") return "approved";
+  if (s === "rejected") return "rejected";
+  if (s === "flagged") return "warning";
+  return "pending";
+}
 
 function GovDashboard() {
   const { showToast } = useClaims();
-  const [rows, setRows] = useState<Row[]>(() => [...dashboardClaims]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [lastEventAt, setLastEventAt] = useState(0);
 
+  // initial load
   useEffect(() => {
-    const upsert = (ref: string, patch: Partial<Row>, fallback?: Row) => {
+    listClaims()
+      .then((data) => setRows(data.map((r) => ({ ...r, flagged: r.status === "flagged" }))))
+      .catch((e) => console.error("listClaims failed", e));
+  }, []);
+
+  // realtime sync from DB
+  useEffect(() => {
+    const off = subscribeClaims((row, evt) => {
       setLastEventAt(Date.now());
       setRows((prev) => {
-        const i = prev.findIndex((r) => r.ref === ref);
-        if (i === -1 && fallback) return [{ ...fallback, ...patch, _flashKey: Date.now() }, ...prev];
-        if (i === -1) return prev;
+        const i = prev.findIndex((r) => r.id === row.id);
+        if (evt === "DELETE") return prev.filter((r) => r.id !== row.id);
+        if (i === -1)
+          return [{ ...row, flagged: row.status === "flagged", _flashKey: Date.now() }, ...prev];
         const next = [...prev];
-        next[i] = { ...next[i], ...patch, _flashKey: Date.now() };
+        next[i] = { ...next[i], ...row, flagged: row.status === "flagged", _flashKey: Date.now() };
         return next;
       });
-    };
-
-    const offs = [
-      eventBus.subscribe("claim.submitted", (p: SystemEventPayload) => {
-        const ref = (p.refCode as string) || `SSATU-${Date.now()}`;
-        upsert(
-          ref,
-          { status: "pending" as never },
-          {
-            ref,
-            patient: (p.patient as string) || "Encik Rahman",
-            type: "Outpatient",
-            provider: (p.provider as string) || "Klinik Sihat",
-            amount: (p.amount as number) || 99,
-            insurer: "AIA",
-            status: "pending" as never,
-            submitted: new Date().toLocaleString("en-MY", {
-              day: "2-digit",
-              month: "short",
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          },
-        );
-      }),
-      eventBus.subscribe("gl.requested", (p: SystemEventPayload) => {
-        const ref = (p.refCode as string) || `GL-${Date.now()}`;
-        upsert(
-          ref,
-          { status: "pending" as never },
-          {
-            ref,
-            patient: (p.patient as string) || "Encik Rahman",
-            type: "Inpatient GL",
-            provider: (p.provider as string) || "Sunway Medical",
-            amount: (p.amount as number) || 18000,
-            insurer: "AIA",
-            status: "pending" as never,
-            submitted: new Date().toLocaleString("en-MY", {
-              day: "2-digit",
-              month: "short",
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          },
-        );
-      }),
-      eventBus.subscribe("claim.auto.approved", (p) => {
-        upsert((p.refCode as string) ?? "", { status: "approved" as never });
-      }),
-      eventBus.subscribe("gl.approved", (p) => {
-        upsert((p.refCode as string) ?? "", { status: "approved" as never });
-      }),
-      eventBus.subscribe("claim.rejected", (p) => {
-        const ref = p.refCode as string;
-        if (ref) upsert(ref, { status: "rejected" as never });
-      }),
-    ];
-    return () => offs.forEach((o) => o?.());
+    });
+    return off;
   }, []);
+
+
 
   const totals = useMemo(
     () =>
       rows.reduce(
         (a, c) => {
-          a.total += c.amount;
-          if (c.status === "approved") a.approved += c.amount;
-          if ((c.status as string) === "pending") a.pending += c.amount;
-          if (c.type.toLowerCase().includes("clinic") || c.type.toLowerCase().includes("outpatient")) a.clinic += c.amount;
-          else a.hospital += c.amount;
+          const amt = Number(c.amount);
+          a.total += amt;
+          if (c.status === "approved" || c.status === "auto_approved") a.approved += amt;
+          if (c.status === "pending") a.pending += amt;
+          if (c.claim_type === "clinic") a.clinic += amt;
+          else a.hospital += amt;
           return a;
         },
         { total: 0, approved: 0, pending: 0, clinic: 0, hospital: 0 },
@@ -118,21 +85,25 @@ function GovDashboard() {
     [rows],
   );
 
-  const handleAction = (ref: string, action: "approve" | "reject" | "flag") => {
+  const handleAction = async (ref: string, action: "approve" | "reject" | "flag") => {
+    const decision = action === "approve" ? "approved" : action === "reject" ? "rejected" : "flagged";
+    try {
+      await decideClaim(ref, decision, "MOH Reviewer");
+    } catch (e) {
+      console.error("decideClaim failed", e);
+    }
+    const row = rows.find((r) => r.ref_code === ref);
     if (action === "approve") {
-      setRows((prev) => prev.map((r) => (r.ref === ref ? { ...r, status: "approved" as never, _flashKey: Date.now() } : r)));
-      const row = rows.find((r) => r.ref === ref);
       eventBus.emit("gl.approved", {
         source: "Government",
         level: "success",
         message: `Approved by MOH reviewer · ${ref}`,
         refCode: ref,
-        amount: row?.amount,
+        amount: row ? Number(row.amount) : undefined,
       });
-      if (row) updateBilling({ ref, amount: row.amount });
+      if (row) updateBilling({ ref, amount: Number(row.amount) });
       showToast(`Approved ${ref}`, { level: "success", source: "Government" });
     } else if (action === "reject") {
-      setRows((prev) => prev.map((r) => (r.ref === ref ? { ...r, status: "rejected" as never, _flashKey: Date.now() } : r)));
       eventBus.emit("claim.rejected", {
         source: "Government",
         level: "warning",
@@ -141,7 +112,6 @@ function GovDashboard() {
       });
       showToast(`Rejected ${ref}`, { level: "warning", source: "Government" });
     } else {
-      setRows((prev) => prev.map((r) => (r.ref === ref ? { ...r, flagged: true, _flashKey: Date.now() } : r)));
       showToast(`Flagged ${ref} for review`, { level: "info", source: "Government" });
     }
   };
@@ -236,10 +206,10 @@ function GovDashboard() {
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {rows.map((c) => (
-                  <tr key={c.ref} className={`hover:bg-slate-50 ${c._flashKey ? "row-flash" : ""}`}>
+                  <tr key={c.id} className={`hover:bg-slate-50 ${c._flashKey ? "row-flash" : ""}`}>
                     <Td>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs text-sky-700">{c.ref}</span>
+                        <span className="font-mono text-xs text-sky-700">{c.ref_code}</span>
                         {c.flagged && (
                           <span className="rounded border border-amber-300 bg-amber-50 px-1 py-0.5 text-[9px] font-semibold uppercase text-amber-700">
                             Flagged
@@ -247,30 +217,37 @@ function GovDashboard() {
                         )}
                       </div>
                     </Td>
-                    <Td>{c.patient}</Td>
-                    <Td className="text-slate-600">{c.type}</Td>
-                    <Td className="text-slate-600">{c.provider}</Td>
-                    <Td className="text-right font-mono">RM {c.amount.toLocaleString()}</Td>
-                    <Td><StatusBadge status={c.status} /></Td>
-                    <Td className="font-mono text-xs text-slate-600">{c.submitted}</Td>
+                    <Td>{c.patient_name}</Td>
+                    <Td className="text-slate-600">{c.claim_type === "clinic" ? "Outpatient" : "Inpatient GL"}</Td>
+                    <Td className="text-slate-600">{c.provider_name}</Td>
+                    <Td className="text-right font-mono">RM {Number(c.amount).toLocaleString()}</Td>
+                    <Td><StatusBadge status={statusLabel(c.status)} /></Td>
+                    <Td className="font-mono text-xs text-slate-600">
+                      {new Date(c.created_at).toLocaleString("en-MY", {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </Td>
                     <Td>
                       <div className="flex justify-end gap-1">
                         <ActionBtn
-                          onClick={() => handleAction(c.ref, "approve")}
+                          onClick={() => handleAction(c.ref_code, "approve")}
                           tone="emerald"
                           icon={<CheckCircle2 className="h-3 w-3" />}
                           label="Approve"
-                          disabled={c.status === "approved"}
+                          disabled={c.status === "approved" || c.status === "auto_approved"}
                         />
                         <ActionBtn
-                          onClick={() => handleAction(c.ref, "reject")}
+                          onClick={() => handleAction(c.ref_code, "reject")}
                           tone="red"
                           icon={<XCircle className="h-3 w-3" />}
                           label="Reject"
                           disabled={c.status === "rejected"}
                         />
                         <ActionBtn
-                          onClick={() => handleAction(c.ref, "flag")}
+                          onClick={() => handleAction(c.ref_code, "flag")}
                           tone="amber"
                           icon={<Flag className="h-3 w-3" />}
                           label="Flag"
