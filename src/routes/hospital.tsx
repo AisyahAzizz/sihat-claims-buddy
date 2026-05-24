@@ -11,7 +11,13 @@ import { useClaims } from "@/context/ClaimsContext";
 import { rahman, hospitalCase } from "@/data/mockData";
 import { eventBus } from "@/lib/eventBus";
 import { notifyOps, pushToInventory, updateBilling } from "@/lib/integrations";
+import { submitClaim, decideClaim } from "@/lib/claimsApi";
 import { AlertTriangle, ArrowRight, CheckCircle2, ArrowRightCircle, Loader2 } from "lucide-react";
+
+// Per-session unique ref so re-submits don't collide on the unique index
+function makeHospitalRef() {
+  return `GL-SSATU-${Date.now().toString().slice(-8)}-HOS`;
+}
 
 
 export const Route = createFileRoute("/hospital")({
@@ -20,6 +26,9 @@ export const Route = createFileRoute("/hospital")({
 });
 
 const STEPS = ["Admission", "GL Request", "AI Review", "GL Status", "Ward & Claim"];
+
+// Holds the ref_code for the current hospital session so Step4 can approve the row Step2 created
+let currentHospitalRef: string | null = null;
 
 function HospitalWizard() {
   const { hospitalStep, setHospitalStep } = useClaims();
@@ -190,12 +199,28 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
           Back
         </button>
         <button
-          onClick={() => {
+          onClick={async () => {
+            const ref = makeHospitalRef();
+            currentHospitalRef = ref;
+            try {
+              await submitClaim({
+                ref_code: ref,
+                patient_name: rahman.name,
+                patient_ic: rahman.myKad,
+                provider_name: hospitalCase.hospital,
+                claim_type: "hospital",
+                amount: hospitalCase.glDetails.approvedAmount,
+                diagnosis: `${hospitalCase.icd10} — ${hospitalCase.icd10Desc}`,
+                status: "pending",
+              });
+            } catch (e) {
+              console.error("submitClaim (hospital) failed", e);
+            }
             eventBus.emit("gl.requested", {
               source: "Hospital",
               level: "info",
               message: "GL request submitted to AIA / HealthMetrics",
-              refCode: hospitalCase.glRef,
+              refCode: ref,
             });
             onNext();
           }}
@@ -373,13 +398,21 @@ function Step4({ onNext }: { onNext: () => void }) {
         refCode: hospitalCase.glRef,
       });
     }, reviewDelay);
-    const t2 = setTimeout(() => {
+    const t2 = setTimeout(async () => {
       setIssued(true);
+      const ref = currentHospitalRef ?? hospitalCase.glRef;
+      if (currentHospitalRef) {
+        try {
+          await decideClaim(ref, "approved", "AIA Medical Officer #A17");
+        } catch (e) {
+          console.error("decideClaim (hospital) failed", e);
+        }
+      }
       eventBus.emit("gl.approved", {
         source: "Hospital",
         level: "success",
         message: `GL approved · RM ${hospitalCase.glDetails.approvedAmount.toLocaleString()}`,
-        refCode: hospitalCase.glRef,
+        refCode: ref,
         amount: hospitalCase.glDetails.approvedAmount,
       });
     }, reviewDelay + (demoMode ? 600 : 1500));
