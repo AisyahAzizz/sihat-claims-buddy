@@ -191,12 +191,27 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
           Back
         </button>
         <button
-          onClick={() => {
+          onClick={async () => {
+            const ref = `${hospitalCase.glRef}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
+            (window as unknown as { __lastHospitalRef?: string }).__lastHospitalRef = ref;
+            try {
+              await submitClaim({
+                ref_code: ref,
+                patient_name: rahman.name,
+                patient_ic: rahman.myKad,
+                provider_name: hospitalCase.hospital,
+                claim_type: "hospital",
+                amount: hospitalCase.glDetails.approvedAmount,
+                diagnosis: `${hospitalCase.icd10} — ${hospitalCase.icd10Desc}`,
+              });
+            } catch (e) {
+              console.error("submitClaim (GL) failed", e);
+            }
             eventBus.emit("gl.requested", {
               source: "Hospital",
               level: "info",
               message: "GL request submitted to AIA / HealthMetrics",
-              refCode: hospitalCase.glRef,
+              refCode: ref,
             });
             onNext();
           }}
