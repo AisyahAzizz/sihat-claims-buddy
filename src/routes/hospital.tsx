@@ -6,9 +6,11 @@ import { ScanProgress } from "@/components/ScanProgress";
 import { CheckList } from "@/components/CheckList";
 import { ClaimBreakdown } from "@/components/ClaimBreakdown";
 import { GLTimeline, TimelineEvent } from "@/components/GLTimeline";
+import { DocumentDropzone, type DocFile } from "@/components/DocumentDropzone";
 import { useClaims } from "@/context/ClaimsContext";
 import { rahman, hospitalCase } from "@/data/mockData";
 import { AlertTriangle, ArrowRight, CheckCircle2, ArrowRightCircle } from "lucide-react";
+
 
 export const Route = createFileRoute("/hospital")({
   component: HospitalWizard,
@@ -208,8 +210,14 @@ function Field({ label, value, mono }: { label: string; value: React.ReactNode; 
 }
 
 function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+  const { showToast } = useClaims();
+  const [docs, setDocs] = useState<DocFile[] | null>(null);
+  const [started, setStarted] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [showQA, setShowQA] = useState(false);
+
+  const currentDocs = docs ?? (hospitalCase.documents as DocFile[]);
+  const canStart = currentDocs.length > 0;
 
   useEffect(() => {
     if (scanned) {
@@ -220,13 +228,35 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
 
   return (
     <div className="space-y-6">
-      {!scanned ? (
+      <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-5">
+        <h3 className="mb-4 text-sm font-semibold text-slate-100">Supporting documents</h3>
+        <DocumentDropzone
+          seed={hospitalCase.documents as DocFile[]}
+          files={docs}
+          onChange={setDocs}
+          onToast={showToast}
+        />
+      </div>
+
+      {!started && (
+        <button
+          onClick={() => setStarted(true)}
+          disabled={!canStart}
+          className="inline-flex items-center gap-2 rounded-md bg-sky-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Start AI Review
+        </button>
+      )}
+
+      {started && !scanned && (
         <ScanProgress
           labels={hospitalCase.scanLabels}
           intervalMs={320}
           onComplete={() => setScanned(true)}
         />
-      ) : (
+      )}
+
+      {scanned && (
         <>
           <CheckList items={hospitalCase.checks} />
           <div className="rounded-lg border border-slate-700 bg-slate-800/40 px-4 py-3 text-sm text-slate-300">
@@ -252,6 +282,7 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
           )}
         </>
       )}
+
 
       <div className="flex items-center justify-between">
         <button
