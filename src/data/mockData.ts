@@ -65,6 +65,11 @@ export const hospitalCase = {
   procedures: ["Coronary angiography", "12-lead ECG", "Echocardiogram"],
   estStay: "3–5 days",
   glRef: "GL-SSATU-20260524-HOS",
+  documents: [
+    { name: "admission_form_rahman.pdf", size: "212 KB", type: "PDF" },
+    { name: "ecg_2026-05-24.jpg", size: "1.8 MB", type: "Photo" },
+    { name: "lab_troponin_report.pdf", size: "98 KB", type: "PDF" },
+  ],
   justification:
     "Patient presents with exertional chest pain and elevated troponin (0.08 ng/mL). History of T2DM (E11.9) and hypertension. ECG shows ST-segment depression in leads V4–V6. Clinical urgency warrants inpatient coronary angiography to exclude acute coronary syndrome. Outpatient management is clinically inappropriate at this time given haemodynamic status and troponin trend.",
   estCost: "RM 12,400 – RM 18,000",

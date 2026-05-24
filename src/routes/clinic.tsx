@@ -7,9 +7,11 @@ import { CheckList } from "@/components/CheckList";
 import { ClaimBreakdown } from "@/components/ClaimBreakdown";
 import { GLTimeline, TimelineEvent } from "@/components/GLTimeline";
 import { CodeBlock } from "@/components/CodeBlock";
+import { DocumentDropzone, type DocFile } from "@/components/DocumentDropzone";
 import { useClaims } from "@/context/ClaimsContext";
 import { rahman, clinicClaim } from "@/data/mockData";
-import { FileText, Image as ImageIcon, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
+
 
 export const Route = createFileRoute("/clinic")({
   component: ClinicWizard,
@@ -64,43 +66,36 @@ function Step1({ onNext }: { onNext: () => void }) {
 }
 
 function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+  const { showToast } = useClaims();
+  const [docs, setDocs] = useState<DocFile[] | null>(null);
   const [scanning, setScanning] = useState(false);
   const [done, setDone] = useState(false);
+
+  const currentDocs = docs ?? (clinicClaim.documents as DocFile[]);
+  const canScan = currentDocs.length > 0;
+
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-5">
         <h3 className="mb-4 text-sm font-semibold text-slate-100">Uploaded documents</h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {clinicClaim.documents.map((d, i) => (
-            <div
-              key={d.name}
-              className="flex items-center gap-3 rounded-lg border border-slate-700 bg-slate-900/40 p-3"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-slate-800 ring-1 ring-slate-700">
-                {i === 0 ? <FileText className="h-5 w-5 text-sky-400" /> : <ImageIcon className="h-5 w-5 text-sky-400" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="truncate font-mono text-xs text-slate-200">{d.name}</div>
-                <div className="text-[11px] text-slate-500">
-                  {d.type} · {d.size}
-                </div>
-              </div>
-              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-300 ring-1 ring-emerald-500/40">
-                Ready
-              </span>
-            </div>
-          ))}
-        </div>
+        <DocumentDropzone
+          seed={clinicClaim.documents as DocFile[]}
+          files={docs}
+          onChange={setDocs}
+          onToast={showToast}
+        />
       </div>
 
       {!scanning && !done && (
         <button
           onClick={() => setScanning(true)}
-          className="inline-flex items-center gap-2 rounded-md bg-sky-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-sky-400"
+          disabled={!canScan}
+          className="inline-flex items-center gap-2 rounded-md bg-sky-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Scan Documents
         </button>
       )}
+
 
       {scanning && !done && (
         <ScanProgress
