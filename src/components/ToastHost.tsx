@@ -21,6 +21,9 @@ const SOURCE_COLOR: Record<ToastSource, string> = {
   Clinic: "text-sky-700",
   Hospital: "text-violet-700",
   System: "text-slate-700",
+  Government: "text-red-700",
+  Patient: "text-emerald-700",
+  Provider: "text-sky-700",
 };
 
 export function ToastHost() {

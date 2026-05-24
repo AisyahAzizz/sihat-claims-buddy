@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StatusRouteImport } from './routes/status'
+import { Route as PatientRouteImport } from './routes/patient'
 import { Route as HospitalRouteImport } from './routes/hospital'
+import { Route as GovRouteImport } from './routes/gov'
 import { Route as ClinicRouteImport } from './routes/clinic'
 import { Route as AppealRouteImport } from './routes/appeal'
 import { Route as IndexRouteImport } from './routes/index'
@@ -20,9 +22,19 @@ const StatusRoute = StatusRouteImport.update({
   path: '/status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PatientRoute = PatientRouteImport.update({
+  id: '/patient',
+  path: '/patient',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HospitalRoute = HospitalRouteImport.update({
   id: '/hospital',
   path: '/hospital',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GovRoute = GovRouteImport.update({
+  id: '/gov',
+  path: '/gov',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClinicRoute = ClinicRouteImport.update({
@@ -45,14 +57,18 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/appeal': typeof AppealRoute
   '/clinic': typeof ClinicRoute
+  '/gov': typeof GovRoute
   '/hospital': typeof HospitalRoute
+  '/patient': typeof PatientRoute
   '/status': typeof StatusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/appeal': typeof AppealRoute
   '/clinic': typeof ClinicRoute
+  '/gov': typeof GovRoute
   '/hospital': typeof HospitalRoute
+  '/patient': typeof PatientRoute
   '/status': typeof StatusRoute
 }
 export interface FileRoutesById {
@@ -60,22 +76,48 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/appeal': typeof AppealRoute
   '/clinic': typeof ClinicRoute
+  '/gov': typeof GovRoute
   '/hospital': typeof HospitalRoute
+  '/patient': typeof PatientRoute
   '/status': typeof StatusRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/appeal' | '/clinic' | '/hospital' | '/status'
+  fullPaths:
+    | '/'
+    | '/appeal'
+    | '/clinic'
+    | '/gov'
+    | '/hospital'
+    | '/patient'
+    | '/status'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/appeal' | '/clinic' | '/hospital' | '/status'
-  id: '__root__' | '/' | '/appeal' | '/clinic' | '/hospital' | '/status'
+  to:
+    | '/'
+    | '/appeal'
+    | '/clinic'
+    | '/gov'
+    | '/hospital'
+    | '/patient'
+    | '/status'
+  id:
+    | '__root__'
+    | '/'
+    | '/appeal'
+    | '/clinic'
+    | '/gov'
+    | '/hospital'
+    | '/patient'
+    | '/status'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppealRoute: typeof AppealRoute
   ClinicRoute: typeof ClinicRoute
+  GovRoute: typeof GovRoute
   HospitalRoute: typeof HospitalRoute
+  PatientRoute: typeof PatientRoute
   StatusRoute: typeof StatusRoute
 }
 
@@ -88,11 +130,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/patient': {
+      id: '/patient'
+      path: '/patient'
+      fullPath: '/patient'
+      preLoaderRoute: typeof PatientRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/hospital': {
       id: '/hospital'
       path: '/hospital'
       fullPath: '/hospital'
       preLoaderRoute: typeof HospitalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gov': {
+      id: '/gov'
+      path: '/gov'
+      fullPath: '/gov'
+      preLoaderRoute: typeof GovRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clinic': {
@@ -123,9 +179,21 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppealRoute: AppealRoute,
   ClinicRoute: ClinicRoute,
+  GovRoute: GovRoute,
   HospitalRoute: HospitalRoute,
+  PatientRoute: PatientRoute,
   StatusRoute: StatusRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
