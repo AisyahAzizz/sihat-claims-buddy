@@ -1,45 +1,58 @@
-## Switch app to light mode
+## Goal
 
-Convert the SihatSatu app from its current dark-only theme to a light theme. Keep the same sky/emerald/violet accent system so brand identity stays intact.
+Replace the in-memory mock (`ClaimsContext`, `eventBus`, `SystemContext`, localStorage role) with a real Postgres backend via **Lovable Cloud**, so Provider / Government / Patient portals see the same live data — no hand-written `src/lib/supabase.ts` needed.
 
-### Changes
+## Why not the snippet you pasted
 
-**1. `src/styles.css`**
-- Remove `dark` class from `<html>` usage — switch `:root` tokens to light values:
-  - `--background`: near-white (`oklch(0.99 0.005 256)`)
-  - `--foreground`: slate-900
-  - `--card`, `--popover`: white
-  - `--muted`, `--secondary`, `--accent`: slate-100
-  - `--border`, `--input`: slate-200
-  - `--primary`: keep sky-500 family
-- Update `html, body` rule: `background-color: #f8fafc` (slate-50), `color: #0f172a` (slate-900).
-- Update `@layer base * { border-color }` to slate-200.
-- Update `.card-glow` hover shadow opacity for light bg.
-- Update `.row-flash` background tint (slightly stronger sky alpha for visibility on white).
+`import.meta.env.https://...!` is invalid syntax — `import.meta.env` only accepts variable names. Enabling Lovable Cloud auto-generates a correct client at `@/integrations/supabase/client` with URL + publishable key wired in. That replaces your file entirely.
 
-**2. `src/routes/__root.tsx`**
-- Remove `className="dark"` from `<html>`.
-- Change main wrapper `bg-slate-900 text-slate-100` → `bg-slate-50 text-slate-900`.
+## Steps
 
-**3. Component color sweep** (replace slate-dark utility classes with light equivalents). Files: `TopBar.tsx`, `ToastHost.tsx`, `ActivityFeed.tsx`, `StepBar.tsx`, `StatusBadge.tsx`, `CheckList.tsx`, `ClaimBreakdown.tsx`, `CodeBlock.tsx`, `GLTimeline.tsx`, `KaizenBadge.tsx`, `PatientCard.tsx`, `ScanProgress.tsx`, `DocumentDropzone.tsx`, and routes `index.tsx`, `clinic.tsx`, `hospital.tsx`, `status.tsx`, `appeal.tsx`.
+### 1. Enable Lovable Cloud
+- Provisions Postgres, auth, storage, generates `@/integrations/supabase/client.ts` and `client.server.ts`.
 
-Mapping rules applied consistently:
-- `bg-slate-900` / `bg-slate-800/*` (page & card surfaces) → `bg-white` or `bg-slate-50`
-- `border-slate-700` → `border-slate-200`
-- `text-slate-100` → `text-slate-900`
-- `text-slate-300/400` → `text-slate-600`
-- `text-slate-500` (meta) → `text-slate-500` (kept)
-- `bg-slate-950` (CodeBlock) → `bg-slate-900` (keep code dark for contrast/legibility) — code blocks stay dark intentionally.
-- Accent tints (`bg-sky-500/15`, `text-sky-300`, etc.) → lighter/darker variants: `bg-sky-100`, `text-sky-700`, `ring-sky-300` etc. Same for emerald/amber/violet/red used in badges, timelines, toasts.
-- Shadows: `shadow-black/40` → `shadow-slate-900/10`.
+### 2. Database schema (migration)
 
-**4. TopBar live badges**
-- Re-tune `LiveBadge` tone palette for white background: stronger text color (`text-emerald-700` instead of `text-emerald-300`), light bg (`bg-emerald-50`), border (`border-emerald-200`). Same pattern for sky/amber.
+```text
+profiles (id uuid PK → auth.users, full_name, created_at)
+user_roles (user_id, role enum: provider|government|patient)  -- separate table, has_role() SECURITY DEFINER fn
+claims (
+  id uuid PK, ref_code text unique, patient_name text, provider_id uuid,
+  type text, amount numeric, status enum: pending|auto_approved|approved|rejected|flagged,
+  diagnosis text, created_at, updated_at, decided_by uuid, decided_at
+)
+claim_events (id, claim_id FK, event_name text, source text, message text, payload jsonb, created_at)
+```
 
-**5. Camera modal (`DocumentDropzone.tsx`)**
-- Modal overlay stays dark (it's a camera viewfinder — dark is correct UX). Only adjust the trigger buttons and dropzone surface to light theme.
+RLS:
+- `claims`: providers see/insert their own; government sees all + can update status; patients see claims where `patient_name`/linked id matches.
+- `claim_events`: readable by anyone who can read the parent claim; insert via server fn only.
+- `user_roles`: user reads own row; admins managed via `has_role()`.
 
-### Out of scope
-- No layout changes, no copy changes, no logic changes.
-- No theme toggle — purely a one-way switch to light mode (can add toggle later if requested).
-- Brand accent hues unchanged; only their light/dark shade variants are swapped.
+### 3. Realtime
+Enable Postgres realtime on `claims` and `claim_events`. Replace `eventBus.subscribe(...)` in `gov.tsx`, `patient.tsx`, `ActivityFeed.tsx` with Supabase channel subscriptions. Keep `eventBus` as a thin local fan-out for toast UX.
+
+### 4. Server functions (`src/lib/claims.functions.ts`)
+- `submitClaim` (provider) — insert + emit `claim.submitted` event row
+- `decideClaim` (government, requires role check) — update status, insert event
+- `listClaims` / `getMyClaims` — role-scoped reads via RLS
+
+### 5. Refactor existing code
+- `ClaimsContext` → keep `clinicStep`/`hospitalStep`/`toasts` (UI only); remove mock claim arrays.
+- `RoleContext` → load role from `user_roles` after sign-in; keep localStorage as dev-mode override behind a flag.
+- `clinic.tsx` submit → calls `submitClaim`.
+- `gov.tsx` approve/reject/flag → calls `decideClaim`.
+- `patient.tsx` timeline → `useQuery` + realtime channel on `claims`.
+- `ActivityFeed` → reads `claim_events` table (last 50) + realtime.
+
+### 6. Auth
+Add minimal `/login` (email+password + Google) and `_authenticated` layout. Demo mode: seed 3 test accounts (one per role) so the role switcher still works for the hackathon demo.
+
+### 7. Delete the broken snippet
+Do not create `src/lib/supabase.ts`. All imports use `@/integrations/supabase/client`.
+
+## Out of scope
+- File storage, payments, email sending, AI gateway — can be added later.
+
+## Open question
+Hackathon demo: do you want **real auth (login screen)** or keep the **role switcher as-is** and just have all 3 roles share one demo account that bypasses RLS via a server fn? The former is more "real", the latter is faster to demo.
