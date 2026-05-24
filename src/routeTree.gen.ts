@@ -9,8 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StatusRouteImport } from './routes/status'
+import { Route as HospitalRouteImport } from './routes/hospital'
+import { Route as ClinicRouteImport } from './routes/clinic'
+import { Route as AppealRouteImport } from './routes/appeal'
 import { Route as IndexRouteImport } from './routes/index'
 
+const StatusRoute = StatusRouteImport.update({
+  id: '/status',
+  path: '/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HospitalRoute = HospitalRouteImport.update({
+  id: '/hospital',
+  path: '/hospital',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClinicRoute = ClinicRouteImport.update({
+  id: '/clinic',
+  path: '/clinic',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppealRoute = AppealRouteImport.update({
+  id: '/appeal',
+  path: '/appeal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +43,72 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/appeal': typeof AppealRoute
+  '/clinic': typeof ClinicRoute
+  '/hospital': typeof HospitalRoute
+  '/status': typeof StatusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/appeal': typeof AppealRoute
+  '/clinic': typeof ClinicRoute
+  '/hospital': typeof HospitalRoute
+  '/status': typeof StatusRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/appeal': typeof AppealRoute
+  '/clinic': typeof ClinicRoute
+  '/hospital': typeof HospitalRoute
+  '/status': typeof StatusRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/appeal' | '/clinic' | '/hospital' | '/status'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/appeal' | '/clinic' | '/hospital' | '/status'
+  id: '__root__' | '/' | '/appeal' | '/clinic' | '/hospital' | '/status'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppealRoute: typeof AppealRoute
+  ClinicRoute: typeof ClinicRoute
+  HospitalRoute: typeof HospitalRoute
+  StatusRoute: typeof StatusRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/status': {
+      id: '/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof StatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hospital': {
+      id: '/hospital'
+      path: '/hospital'
+      fullPath: '/hospital'
+      preLoaderRoute: typeof HospitalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clinic': {
+      id: '/clinic'
+      path: '/clinic'
+      fullPath: '/clinic'
+      preLoaderRoute: typeof ClinicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/appeal': {
+      id: '/appeal'
+      path: '/appeal'
+      fullPath: '/appeal'
+      preLoaderRoute: typeof AppealRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,7 +121,21 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppealRoute: AppealRoute,
+  ClinicRoute: ClinicRoute,
+  HospitalRoute: HospitalRoute,
+  StatusRoute: StatusRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
