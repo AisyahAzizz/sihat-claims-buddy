@@ -30,10 +30,10 @@ export const Route = createFileRoute("/gov")({
 
 type Row = ClaimRow & { _flashKey?: number; flagged?: boolean };
 
-function statusLabel(s: ClaimRow["status"]) {
+function statusLabel(s: ClaimRow["status"]): "approved" | "pending" | "rejected" | "warning" {
   if (s === "auto_approved" || s === "approved") return "approved";
   if (s === "rejected") return "rejected";
-  if (s === "flagged") return "flagged";
+  if (s === "flagged") return "warning";
   return "pending";
 }
 
