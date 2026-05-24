@@ -10,6 +10,8 @@ import { CodeBlock } from "@/components/CodeBlock";
 import { DocumentDropzone, type DocFile } from "@/components/DocumentDropzone";
 import { useClaims } from "@/context/ClaimsContext";
 import { rahman, clinicClaim } from "@/data/mockData";
+import { eventBus } from "@/lib/eventBus";
+import { updateBilling } from "@/lib/integrations";
 import { ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
 
 
