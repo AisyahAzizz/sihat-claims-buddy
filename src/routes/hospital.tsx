@@ -11,6 +11,7 @@ import { useClaims } from "@/context/ClaimsContext";
 import { rahman, hospitalCase } from "@/data/mockData";
 import { eventBus } from "@/lib/eventBus";
 import { notifyOps, pushToInventory, updateBilling } from "@/lib/integrations";
+import { submitClaim, decideClaim } from "@/lib/claimsApi";
 import { AlertTriangle, ArrowRight, CheckCircle2, ArrowRightCircle, Loader2 } from "lucide-react";
 
 
@@ -190,12 +191,27 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
           Back
         </button>
         <button
-          onClick={() => {
+          onClick={async () => {
+            const ref = `${hospitalCase.glRef}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
+            (window as unknown as { __lastHospitalRef?: string }).__lastHospitalRef = ref;
+            try {
+              await submitClaim({
+                ref_code: ref,
+                patient_name: rahman.name,
+                patient_ic: rahman.myKad,
+                provider_name: hospitalCase.hospital,
+                claim_type: "hospital",
+                amount: hospitalCase.glDetails.approvedAmount,
+                diagnosis: `${hospitalCase.icd10} — ${hospitalCase.icd10Desc}`,
+              });
+            } catch (e) {
+              console.error("submitClaim (GL) failed", e);
+            }
             eventBus.emit("gl.requested", {
               source: "Hospital",
               level: "info",
               message: "GL request submitted to AIA / HealthMetrics",
-              refCode: hospitalCase.glRef,
+              refCode: ref,
             });
             onNext();
           }}
@@ -375,11 +391,16 @@ function Step4({ onNext }: { onNext: () => void }) {
     }, reviewDelay);
     const t2 = setTimeout(() => {
       setIssued(true);
+      const ref =
+        (window as unknown as { __lastHospitalRef?: string }).__lastHospitalRef ?? hospitalCase.glRef;
+      decideClaim(ref, "approved", "HealthMetrics TPA").catch((e) =>
+        console.error("decideClaim (GL) failed", e),
+      );
       eventBus.emit("gl.approved", {
         source: "Hospital",
         level: "success",
         message: `GL approved · RM ${hospitalCase.glDetails.approvedAmount.toLocaleString()}`,
-        refCode: hospitalCase.glRef,
+        refCode: ref,
         amount: hospitalCase.glDetails.approvedAmount,
       });
     }, reviewDelay + (demoMode ? 600 : 1500));
@@ -491,15 +512,31 @@ function Step5({ onReset }: { onReset: () => void }) {
 
       <div className="flex flex-wrap items-center justify-end gap-3">
         <button
-          onClick={() => {
+          onClick={async () => {
+            const glRef =
+              (window as unknown as { __lastHospitalRef?: string }).__lastHospitalRef ?? hospitalCase.glRef;
+            const dischargeRef = `${glRef}-DC`;
             notifyOps({ ward: "4B", patient: rahman.name });
-            pushToInventory({ ref: hospitalCase.glRef });
-            updateBilling({ ref: hospitalCase.glRef, amount: hospitalCase.claimTotal });
+            pushToInventory({ ref: glRef });
+            updateBilling({ ref: glRef, amount: hospitalCase.claimTotal });
+            try {
+              await submitClaim({
+                ref_code: dischargeRef,
+                patient_name: rahman.name,
+                patient_ic: rahman.myKad,
+                provider_name: hospitalCase.hospital,
+                claim_type: "hospital",
+                amount: hospitalCase.claimTotal,
+                diagnosis: `${hospitalCase.icd10} — ${hospitalCase.icd10Desc}`,
+              });
+            } catch (e) {
+              console.error("submitClaim (discharge) failed", e);
+            }
             eventBus.emit("discharge.queued", {
               source: "Hospital",
               level: "success",
               message: "Discharge claim queued · auto-submitting to AIA",
-              refCode: hospitalCase.glRef,
+              refCode: dischargeRef,
               amount: hospitalCase.claimTotal,
             });
             showToast("Discharge claim queued · auto-submitting to AIA", {
