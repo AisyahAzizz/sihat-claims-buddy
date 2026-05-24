@@ -1,5 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Stethoscope, Building2, ArrowRight, Zap } from "lucide-react";
+import { useRole } from "@/context/RoleContext";
 
 export const Route = createFileRoute("/")({
   component: ModeSelector,
@@ -15,6 +17,14 @@ export const Route = createFileRoute("/")({
 });
 
 function ModeSelector() {
+  const { currentRole } = useRole();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (currentRole === "government") navigate({ to: "/gov" });
+    else if (currentRole === "patient") navigate({ to: "/patient" });
+  }, [currentRole, navigate]);
+
   return (
     <div className="mx-auto max-w-6xl">
       <div className="mb-10 text-center">
