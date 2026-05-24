@@ -512,15 +512,31 @@ function Step5({ onReset }: { onReset: () => void }) {
 
       <div className="flex flex-wrap items-center justify-end gap-3">
         <button
-          onClick={() => {
+          onClick={async () => {
+            const glRef =
+              (window as unknown as { __lastHospitalRef?: string }).__lastHospitalRef ?? hospitalCase.glRef;
+            const dischargeRef = `${glRef}-DC`;
             notifyOps({ ward: "4B", patient: rahman.name });
-            pushToInventory({ ref: hospitalCase.glRef });
-            updateBilling({ ref: hospitalCase.glRef, amount: hospitalCase.claimTotal });
+            pushToInventory({ ref: glRef });
+            updateBilling({ ref: glRef, amount: hospitalCase.claimTotal });
+            try {
+              await submitClaim({
+                ref_code: dischargeRef,
+                patient_name: rahman.name,
+                patient_ic: rahman.myKad,
+                provider_name: hospitalCase.hospital,
+                claim_type: "hospital",
+                amount: hospitalCase.claimTotal,
+                diagnosis: `${hospitalCase.icd10} — ${hospitalCase.icd10Desc}`,
+              });
+            } catch (e) {
+              console.error("submitClaim (discharge) failed", e);
+            }
             eventBus.emit("discharge.queued", {
               source: "Hospital",
               level: "success",
               message: "Discharge claim queued · auto-submitting to AIA",
-              refCode: hospitalCase.glRef,
+              refCode: dischargeRef,
               amount: hospitalCase.claimTotal,
             });
             showToast("Discharge claim queued · auto-submitting to AIA", {
