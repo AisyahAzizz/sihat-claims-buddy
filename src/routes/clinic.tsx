@@ -225,7 +225,17 @@ function Step4({ onReset }: { onReset: () => void }) {
     const t3 = setTimeout(() => setStage(3), 3100);
     const t4 = setTimeout(() => setVerifyingDone(true), 3100 + 2000);
     const t5 = setTimeout(() => setStage(4), 5200);
-    const t6 = setTimeout(() => setAdjudicatingDone(true), 5200 + 3000);
+    const t6 = setTimeout(() => {
+      setAdjudicatingDone(true);
+      eventBus.emit("claim.auto.approved", {
+        source: "Clinic",
+        level: "success",
+        message: "Clinic claim auto-approved · RM 99.00",
+        refCode: clinicClaim.json.claimRef,
+        amount: clinicClaim.total,
+      });
+      updateBilling({ ref: clinicClaim.json.claimRef, amount: clinicClaim.total });
+    }, 5200 + 3000);
     return () => [t1, t2, t3, t4, t5, t6].forEach(clearTimeout);
   }, []);
 
