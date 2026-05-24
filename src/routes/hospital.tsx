@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StepBar } from "@/components/StepBar";
 import { PatientCard } from "@/components/PatientCard";
 import { ScanProgress } from "@/components/ScanProgress";
@@ -9,7 +9,9 @@ import { GLTimeline, TimelineEvent } from "@/components/GLTimeline";
 import { DocumentDropzone, type DocFile } from "@/components/DocumentDropzone";
 import { useClaims } from "@/context/ClaimsContext";
 import { rahman, hospitalCase } from "@/data/mockData";
-import { AlertTriangle, ArrowRight, CheckCircle2, ArrowRightCircle } from "lucide-react";
+import { eventBus } from "@/lib/eventBus";
+import { notifyOps, pushToInventory, updateBilling } from "@/lib/integrations";
+import { AlertTriangle, ArrowRight, CheckCircle2, ArrowRightCircle, Loader2 } from "lucide-react";
 
 
 export const Route = createFileRoute("/hospital")({
